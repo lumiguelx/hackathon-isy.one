@@ -7,12 +7,26 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
 
-# check_same_thread so importa para SQLite; ignorado por outros drivers.
-_connect_args = (
-    {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-)
 
-engine = create_engine(settings.database_url, connect_args=_connect_args)
+def _normalize_db_url(url: str) -> str:
+    """Forca o driver psycopg v3 em URLs Postgres.
+
+    Railway/Heroku entregam 'postgres://' ou 'postgresql://', que o SQLAlchemy
+    mapeia para psycopg2 (nao instalado). Reescreve para 'postgresql+psycopg://'.
+    """
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://") :]
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg://" + url[len("postgresql://") :]
+    return url
+
+
+_db_url = _normalize_db_url(settings.database_url)
+
+# check_same_thread so importa para SQLite; ignorado por outros drivers.
+_connect_args = {"check_same_thread": False} if _db_url.startswith("sqlite") else {}
+
+engine = create_engine(_db_url, connect_args=_connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
