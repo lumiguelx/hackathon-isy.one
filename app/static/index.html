@@ -3,101 +3,47 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Isy.One Shell Automation</title>
+  <title>Isy.One — Manutencao</title>
   <style>
-    :root {
-      --bg: #0b0f14;
-      --panel: #121821;
-      --border: #1f2a37;
-      --fg: #e6edf3;
-      --muted: #8b97a7;
-      --green: #3fb950;
-      --red: #f85149;
-      --accent: #2f81f7;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; background: var(--bg); color: var(--fg);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 14px; line-height: 1.5;
-    }
-    header {
-      padding: 16px 24px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-    }
-    header h1 { font-size: 16px; margin: 0; letter-spacing: .5px; }
-    header .dot { color: var(--green); }
-    .token { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    input, button {
-      font-family: inherit; font-size: 13px; border-radius: 6px;
-      border: 1px solid var(--border); background: var(--panel); color: var(--fg);
-      padding: 7px 10px;
-    }
-    input { min-width: 260px; }
-    button { cursor: pointer; }
-    button:hover { border-color: var(--accent); }
-    button.run { background: #15331c; border-color: #2a5a36; color: var(--green); }
-    button.run:hover { background: #1b3f23; }
-    main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 24px; }
-    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-    .panel h2 {
-      font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
-      margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .panel .body { padding: 12px 16px; }
-    .script { padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; }
-    .script .name { color: var(--accent); font-weight: 600; }
-    .script .desc { color: var(--muted); font-size: 12px; margin: 4px 0 8px; }
-    .script .row { display: flex; gap: 8px; align-items: center; }
-    .script .row input { flex: 1; min-width: 0; }
-    pre {
-      margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 13px;
-      max-height: 380px; overflow: auto;
-    }
-    .out-ok { color: var(--green); }
-    .out-err { color: var(--red); }
-    .log { border-bottom: 1px dashed var(--border); padding: 8px 0; font-size: 12px; }
-    .log:last-child { border-bottom: none; }
-    .badge { padding: 1px 7px; border-radius: 999px; font-size: 11px; }
-    .badge.sucesso { background: #15331c; color: var(--green); }
-    .badge.falha { background: #3a1416; color: var(--red); }
-    .muted { color: var(--muted); }
-    .empty { color: var(--muted); padding: 8px 0; }
+    body { font-family: system-ui, sans-serif; margin: 0; color: #111; background: #f6f7f9; }
+    header { padding: 12px 20px; background: #fff; border-bottom: 1px solid #ddd; display: flex; gap: 10px; align-items: center; }
+    header input { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 280px; }
+    button { padding: 6px 10px; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; }
+    main { padding: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; cursor: pointer; }
+    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    .verde { background: #2e7d32; } .amarelo { background: #f9a825; } .vermelho { background: #c62828; }
+    .muted { color: #666; font-size: 12px; }
+    pre { background: #f0f0f0; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+    .row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+    .row input { flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    section { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-top: 16px; }
   </style>
 </head>
 <body>
   <header>
-    <h1><span class="dot">●</span> Isy.One Shell Automation</h1>
-    <div class="token">
-      <span class="muted">X-Isy-Token</span>
-      <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" />
-      <button onclick="loadAll()">Conectar</button>
-    </div>
+    <strong>Isy.One — Manutencao</strong>
+    <span class="muted">Token</span>
+    <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" />
+    <button onclick="loadDashboard()">Atualizar</button>
   </header>
-
   <main>
-    <section class="panel">
-      <h2>Scripts disponiveis <button onclick="loadScripts()">atualizar</button></h2>
-      <div class="body" id="scripts"><div class="empty">Conecte com o token para listar.</div></div>
-    </section>
-
-    <section class="panel">
-      <h2>Saida da execucao</h2>
-      <div class="body"><pre id="output" class="muted">Nenhuma execucao ainda.</pre></div>
-    </section>
-
-    <section class="panel" style="grid-column: 1 / -1;">
-      <h2>Historico de auditoria <button onclick="loadLogs()">atualizar</button></h2>
-      <div class="body" id="logs"><div class="empty">-</div></div>
+    <div class="grid" id="grid"></div>
+    <section id="detalhe" style="display:none">
+      <h3 id="d-nome"></h3>
+      <div id="d-scripts"></div>
+      <h4>Saida</h4>
+      <pre id="d-out">-</pre>
+      <h4>Historico</h4>
+      <div id="d-logs"></div>
     </section>
   </main>
-
   <script>
     const $ = (id) => document.getElementById(id);
     const token = () => $("token").value.trim();
     const headers = () => ({ "Content-Type": "application/json", "X-Isy-Token": token() });
+    let slugAtual = null;
 
     async function api(path, opts = {}) {
       const res = await fetch(path, { headers: headers(), ...opts });
@@ -106,57 +52,51 @@
       return body;
     }
 
-    async function loadScripts() {
-      const el = $("scripts");
+    async function loadDashboard() {
       try {
-        const { data } = await api("/api/v1/scripts");
-        if (!data.length) { el.innerHTML = '<div class="empty">Nenhum script ativo cadastrado.</div>'; return; }
-        el.innerHTML = data.map((s) => `
-          <div class="script">
-            <div class="name">${s.nome}</div>
-            <div class="desc">${s.descricao || "-"} <span class="muted">| params: ${s.parametros || "nenhum"}</span></div>
-            <div class="row">
-              <input id="p-${s.id}" placeholder="parametros separados por espaco" />
-              <button class="run" onclick="run(${s.id})">executar</button>
-            </div>
+        const { data } = await api("/api/v1/admin/tenants/health");
+        $("grid").innerHTML = data.map((t) => `
+          <div class="card" onclick="abrir('${t.slug}')">
+            <div><span class="dot ${t.status_geral}"></span><strong>${t.nome}</strong></div>
+            <div class="muted">ult. manut.: ${t.ultima_manutencao ? t.ultima_manutencao.script_nome + " (" + t.ultima_manutencao.status + ")" : "nenhuma"}</div>
+            <div class="muted">backup: ${t.ultimo_backup ? "ok" : "nunca"}</div>
           </div>`).join("");
-      } catch (e) { el.innerHTML = `<div class="out-err">${e.message}</div>`; }
+      } catch (e) { $("grid").innerHTML = `<div>${e.message}</div>`; }
     }
 
-    async function run(id) {
-      const raw = $(`p-${id}`).value.trim();
+    async function abrir(slug) {
+      slugAtual = slug;
+      $("detalhe").style.display = "block";
+      $("d-nome").textContent = slug;
+      $("d-out").textContent = "-";
+      const { data } = await api(`/api/v1/tenants/${slug}/scripts`);
+      $("d-scripts").innerHTML = data.map((s) => `
+        <div class="row">
+          <strong>${s.nome}</strong>
+          <input id="p-${s.script_id}" placeholder="${s.parametros_default || "sem parametros"}" />
+          <button onclick="run(${s.script_id})">executar</button>
+        </div>`).join("");
+      loadLogs();
+    }
+
+    async function run(sid) {
+      const raw = $(`p-${sid}`).value.trim();
       const parametros = raw ? raw.split(/\s+/) : [];
-      const out = $("output");
-      out.className = "muted"; out.textContent = "Executando...";
+      $("d-out").textContent = "Executando...";
       try {
-        const { data, message } = await api(`/api/v1/scripts/${id}/run`, {
-          method: "POST", body: JSON.stringify({ parametros }),
-        });
-        const ok = data.status === "sucesso";
-        out.className = ok ? "out-ok" : "out-err";
-        out.textContent = `# ${message} (exit ${data.exit_code}, ${data.duracao_ms}ms)\n\n`
-          + (data.stdout || "") + (data.stderr ? `\n[stderr]\n${data.stderr}` : "");
-        loadLogs();
-      } catch (e) { out.className = "out-err"; out.textContent = e.message; }
+        const { data } = await api(`/api/v1/tenants/${slugAtual}/scripts/${sid}/run`, {
+          method: "POST", body: JSON.stringify({ parametros }) });
+        $("d-out").textContent = `# ${data.status} (exit ${data.exit_code})\n\n` + (data.stdout || "") + (data.stderr ? "\n[stderr]\n" + data.stderr : "");
+        loadLogs(); loadDashboard();
+      } catch (e) { $("d-out").textContent = e.message; }
     }
 
     async function loadLogs() {
-      const el = $("logs");
-      try {
-        const { data } = await api("/api/v1/logs?limit=20");
-        if (!data.length) { el.innerHTML = '<div class="empty">Sem execucoes.</div>'; return; }
-        el.innerHTML = data.map((l) => `
-          <div class="log">
-            <span class="badge ${l.status}">${l.status}</span>
-            <strong>${l.script_nome}</strong>
-            <span class="muted">${l.parametros || ""}</span>
-            <span class="muted">| exit ${l.exit_code ?? "-"} | ${new Date(l.executado_em).toLocaleString()}</span>
-          </div>`).join("");
-      } catch (e) { el.innerHTML = `<div class="out-err">${e.message}</div>`; }
+      const { data } = await api(`/api/v1/tenants/${slugAtual}/logs`);
+      $("d-logs").innerHTML = data.map((l) => `<div class="muted">${l.ocorrido_em} — ${l.script_nome || l.tipo} ${l.status || ""}</div>`).join("") || "<div class='muted'>sem registros</div>";
     }
 
-    function loadAll() { loadScripts(); loadLogs(); }
-    loadAll();
+    loadDashboard();
   </script>
 </body>
 </html>
