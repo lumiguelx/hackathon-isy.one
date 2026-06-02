@@ -75,3 +75,55 @@ def test_criar_script_arquivo_sem_caminho_falha(client):
         json={"nome": "y", "tipo": "arquivo", "categoria": "other"},
     )
     assert r.status_code == 422
+
+
+def test_script_owned_auto_bind_aparece_no_cliente(client):
+    assert _criar_tenant(client, slug="tux-burger", porta=8201).status_code == 201
+    tid = next(
+        t["id"]
+        for t in client.get("/api/v1/admin/tenants", headers=AUTH).json()["data"]
+        if t["slug"] == "tux-burger"
+    )
+    r = client.post(
+        "/api/v1/admin/scripts",
+        headers=AUTH,
+        json={
+            "nome": "bespoke-tux",
+            "tipo": "template",
+            "template": "docker ps {{container:db}}",
+            "categoria": "status",
+            "tenant_id": tid,
+        },
+    )
+    assert r.status_code == 201, r.text
+    lst = client.get("/api/v1/tenants/tux-burger/scripts", headers=AUTH).json()["data"]
+    assert any(s["nome"] == "bespoke-tux" for s in lst)
+
+
+def test_script_owned_tenant_inexistente_falha(client):
+    r = client.post(
+        "/api/v1/admin/scripts",
+        headers=AUTH,
+        json={
+            "nome": "orfao",
+            "tipo": "template",
+            "template": "echo {{slug}}",
+            "categoria": "other",
+            "tenant_id": 99999,
+        },
+    )
+    assert r.status_code == 422
+
+
+def test_update_arquivo_nao_pode_limpar_caminho(client):
+    sid = client.post(
+        "/api/v1/admin/scripts",
+        headers=AUTH,
+        json={"nome": "arq1", "caminho": "cleanup_logs.sh", "categoria": "cleanup"},
+    ).json()["data"]["id"]
+    r = client.put(
+        f"/api/v1/admin/scripts/{sid}",
+        headers=AUTH,
+        json={"caminho": ""},
+    )
+    assert r.status_code == 422
