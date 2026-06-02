@@ -9,7 +9,7 @@ from app.core.security import verify_tenant
 from app.models import Tenant
 from app.repositories import events_repo, scripts_repo, tenant_scripts_repo
 from app.schemas import RunRequest
-from app.services import execution_service, health_service
+from app.services import execution_service, health_service, template_service
 
 router = APIRouter(prefix="/api/v1/tenants/{slug}", tags=["Cliente"])
 
@@ -25,7 +25,13 @@ def list_scripts(
             "nome": s.nome,
             "categoria": s.categoria,
             "descricao": s.descricao,
+            "tipo": s.tipo,
             "parametros_default": b.parametros_default,
+            "parametros_schema": (
+                template_service.extract_params(s.template)
+                if s.tipo == "template" and s.template
+                else []
+            ),
         }
         for s, b in disponiveis
     ]

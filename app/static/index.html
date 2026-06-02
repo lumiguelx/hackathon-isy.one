@@ -3,54 +3,246 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Isy.One — Manutencao</title>
+  <title>Isy.One — Console de Automação</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 0; color: #111; background: #f6f7f9; }
-    header { padding: 12px 20px; background: #fff; border-bottom: 1px solid #ddd; display: flex; gap: 10px; align-items: center; }
-    header input { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 280px; }
-    button { padding: 6px 10px; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; }
-    main { padding: 20px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-    .card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; cursor: pointer; }
-    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-    .verde { background: #2e7d32; } .amarelo { background: #f9a825; } .vermelho { background: #c62828; }
-    .muted { color: #666; font-size: 12px; }
-    pre { background: #f0f0f0; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
-    .row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
-    .row input { flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
-    section { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-top: 16px; }
+    :root {
+      --bg: #f6f7f9; --surface: #fff; --border: #e6e8ec; --border-strong: #d4d8df;
+      --text: #161a20; --muted: #6b7280; --primary: #3b5bdb; --primary-d: #364fc7;
+      --green: #2f9e44; --amber: #e8920c; --red: #e03131;
+      --radius: 12px; --radius-s: 8px;
+      --shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 16px rgba(16,24,40,.05);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: var(--font); margin: 0; color: var(--text); background: var(--bg); font-size: 14px; line-height: 1.5; }
+    a { color: var(--primary); }
+    .muted { color: var(--muted); font-size: 12.5px; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+    /* App bar */
+    .appbar { display: flex; align-items: center; gap: 14px; padding: 0 20px; height: 58px;
+      background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
+    .brand { display: flex; align-items: baseline; gap: 2px; font-weight: 700; font-size: 17px; letter-spacing: -.02em; }
+    .brand .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); display: inline-block; margin: 0 1px; transform: translateY(-1px); }
+    .brand small { font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 8px; letter-spacing: 0; }
+    .appbar .spacer { flex: 1; }
+    .token-wrap { display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 4px 4px 4px 12px; }
+    .token-wrap label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .token-wrap input { border: 0; background: transparent; font-family: ui-monospace, monospace; font-size: 12px; width: 240px; outline: none; color: var(--text); }
+    .conn { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); }
+    .conn.ok { background: var(--green); box-shadow: 0 0 0 3px rgba(47,158,68,.15); }
+    .conn.bad { background: var(--red); box-shadow: 0 0 0 3px rgba(224,49,49,.15); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 2px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 58px; z-index: 19; }
+    .tab { padding: 12px 14px; border: 0; background: transparent; cursor: pointer; font-size: 13.5px; color: var(--muted); border-bottom: 2px solid transparent; font-weight: 500; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    main { padding: 24px 20px 60px; max-width: 1200px; margin: 0 auto; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .view-head { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; }
+    .view-head h2 { margin: 0; font-size: 19px; letter-spacing: -.01em; }
+    .view-head .spacer { flex: 1; }
+
+    /* Buttons */
+    .btn { padding: 8px 14px; border: 1px solid var(--primary); background: var(--primary); color: #fff; border-radius: var(--radius-s); cursor: pointer; font-size: 13px; font-weight: 600; font-family: var(--font); }
+    .btn:hover { background: var(--primary-d); border-color: var(--primary-d); }
+    .btn.ghost { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+    .btn.ghost:hover { background: var(--bg); }
+    .btn.danger { background: #fff; color: var(--red); border-color: #f3c2c2; }
+    .btn.danger:hover { background: #fff5f5; }
+    .btn.sm { padding: 5px 10px; font-size: 12px; }
+    .btn:disabled { opacity: .55; cursor: default; }
+
+    /* Cards / grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+    .card.click { cursor: pointer; transition: border-color .12s, transform .12s; }
+    .card.click:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+    .card .name { font-weight: 650; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+    .card .slug { font-size: 11.5px; color: var(--muted); font-family: ui-monospace, monospace; }
+    .card .meta { margin-top: 10px; display: grid; gap: 3px; }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+    .verde { background: var(--green); } .amarelo { background: var(--amber); } .vermelho { background: var(--red); }
+    .pulse { box-shadow: 0 0 0 0 currentColor; animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(224,49,49,.4);} 70%{ box-shadow: 0 0 0 7px rgba(224,49,49,0);} 100%{ box-shadow:0 0 0 0 rgba(224,49,49,0);} }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+    th { background: #fbfbfc; color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fafbfe; }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+    .badge.ok { background: #e9f8ee; color: var(--green); }
+    .badge.fail { background: #fdeaea; color: var(--red); }
+    .badge.neutral { background: #eef0f3; color: var(--muted); }
+
+    /* Toggle */
+    .switch { position: relative; width: 38px; height: 22px; display: inline-block; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; background: var(--border-strong); border-radius: 999px; transition: .15s; cursor: pointer; }
+    .slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .15s; }
+    .switch input:checked + .slider { background: var(--green); }
+    .switch input:checked + .slider::before { transform: translateX(16px); }
+
+    /* Inputs */
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+    .field input, .field select, .field textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--border-strong); border-radius: var(--radius-s); font-size: 13.5px; font-family: var(--font); background: #fff; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid rgba(59,91,219,.25); border-color: var(--primary); }
+    .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .field.invalid input { border-color: var(--red); }
+
+    /* Modal */
+    .overlay { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; align-items: flex-start; justify-content: center; z-index: 50; padding: 40px 16px; overflow:auto; }
+    .overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 60px rgba(16,24,40,.3); }
+    .modal header { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .modal header h3 { margin: 0; font-size: 16px; }
+    .modal header .x { margin-left: auto; cursor: pointer; color: var(--muted); border: 0; background: none; font-size: 20px; line-height: 1; }
+    .modal .body { padding: 20px; }
+    .modal .foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* Drawer */
+    .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 460px; max-width: 92vw; background: var(--surface); box-shadow: -8px 0 40px rgba(16,24,40,.18); transform: translateX(100%); transition: transform .2s; z-index: 40; display: flex; flex-direction: column; }
+    .drawer.show { transform: translateX(0); }
+    .drawer header { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .drawer .body { padding: 20px; overflow: auto; flex: 1; }
+    .exec-row { display: flex; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .exec-row .nm { font-weight: 600; min-width: 110px; font-size: 13px; }
+    .exec-row input { flex: 1; padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: 6px; font-size: 12px; }
+
+    pre { background: #0d1117; color: #c9f3d4; padding: 14px; border-radius: var(--radius-s); white-space: pre-wrap; word-break: break-word; font-size: 12px; line-height: 1.55; max-height: 300px; overflow: auto; font-family: ui-monospace, monospace; }
+
+    /* Toast */
+    .toasts { position: fixed; bottom: 20px; right: 20px; display: grid; gap: 8px; z-index: 60; }
+    .toast { background: var(--text); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow); animation: rise .2s; }
+    .toast.ok { background: var(--green); } .toast.err { background: var(--red); }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px);} }
+    .empty { padding: 40px; text-align: center; color: var(--muted); }
+    iframe { width: 100%; height: 660px; border: 1px solid var(--border); border-radius: var(--radius); }
   </style>
 </head>
 <body>
-  <header>
-    <strong>Isy.One — Manutencao</strong>
-    <span class="muted">Token</span>
-    <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" />
-    <button onclick="loadDashboard()">Atualizar</button>
-    <a href="/registro" target="_blank" style="padding:6px 10px; border:1px solid #ccc; background:#fff; border-radius:4px; text-decoration:none; color:#111">Criar conta</a>
-    <button id="btn-grafana" title="Saude do Docker da frota (OTel + Prometheus + Grafana)" style="margin-left:auto; display:none">Saude da frota (Grafana)</button>
-  </header>
+  <div class="appbar">
+    <div class="brand">isy<span class="dot"></span>one <small>Console de Automação</small></div>
+    <div class="spacer"></div>
+    <div class="token-wrap">
+      <label>X-Isy-Token</label>
+      <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" spellcheck="false" />
+      <span id="conn" class="conn" title="status da conexão"></span>
+    </div>
+    <button class="btn ghost sm" onclick="refreshAll()">Atualizar</button>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="clientes" onclick="switchTab('clientes')">Clientes</button>
+    <button class="tab" data-tab="scripts" onclick="switchTab('scripts')">Scripts</button>
+    <button class="tab" data-tab="token" onclick="switchTab('token')">Token</button>
+    <button class="tab" data-tab="auditoria" onclick="switchTab('auditoria')">Auditoria</button>
+    <button class="tab" data-tab="frota" id="tab-frota" onclick="switchTab('frota')" style="display:none">Frota</button>
+  </nav>
+
   <main>
-    <div class="grid" id="grid"></div>
-    <section id="obs" style="display:none">
-      <h3 style="margin-top:0">Saude da frota — Docker (tempo real)</h3>
-      <div class="muted" style="margin-bottom:8px">OTel + Prometheus + Grafana. Rode <strong>update_agent</strong> ou <strong>cleanup_logs</strong> num cliente e veja os paineis reagirem.</div>
-      <iframe id="grafana-frame" title="Grafana" style="width:100%; height:640px; border:1px solid #ddd; border-radius:6px"></iframe>
+    <!-- CLIENTES -->
+    <section class="view active" id="view-clientes">
+      <div class="view-head">
+        <h2>Clientes</h2>
+        <span class="muted" id="clientes-count"></span>
+        <div class="spacer"></div>
+        <button class="btn" onclick="openProvision()">+ Provisionar cliente</button>
+      </div>
+      <div class="grid" id="grid"></div>
     </section>
-    <section id="detalhe" style="display:none">
-      <h3 id="d-nome"></h3>
-      <div id="d-scripts"></div>
-      <h4>Saida</h4>
-      <pre id="d-out">-</pre>
-      <h4>Historico</h4>
-      <div id="d-logs"></div>
+
+    <!-- SCRIPTS -->
+    <section class="view" id="view-scripts">
+      <div class="view-head">
+        <h2>Catálogo de Scripts</h2>
+        <div class="spacer"></div>
+        <button class="btn" onclick="openScript()">+ Novo script</button>
+      </div>
+      <table>
+        <thead><tr><th>Nome</th><th>Arquivo/Template</th><th>Parâmetros</th><th>Descrição</th><th>Categoria</th><th>Dono</th><th>Ativo</th><th></th></tr></thead>
+        <tbody id="scripts-body"></tbody>
+      </table>
+    </section>
+
+    <!-- TOKEN -->
+    <section class="view" id="view-token">
+      <div class="view-head"><h2>Tokens de Autenticação</h2></div>
+      <div class="grid" style="grid-template-columns: repeat(auto-fill,minmax(320px,1fr))">
+        <div class="card">
+          <div class="name">Token administrativo</div>
+          <p class="muted">Autoriza a gestão de clientes, catálogo e tokens. Rotação imediata.</p>
+          <div class="field"><label>Novo token (≥ 8 caracteres)</label><input id="adm-token" placeholder="novo token admin" /></div>
+          <button class="btn" onclick="rotateAdmin()">Rotacionar token admin</button>
+        </div>
+        <div class="card">
+          <div class="name">Token por cliente</div>
+          <p class="muted">Cada cliente tem seu próprio token de execução (isolamento).</p>
+          <div class="field"><label>Cliente</label><select id="tok-cliente"></select></div>
+          <div class="field"><label>Novo token (≥ 8 caracteres)</label><input id="tok-novo" placeholder="novo token do cliente" /></div>
+          <button class="btn" onclick="rotateTenant()">Rotacionar token do cliente</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUDITORIA -->
+    <section class="view" id="view-auditoria">
+      <div class="view-head">
+        <h2>Auditoria de Execuções</h2>
+        <div class="spacer"></div>
+        <select id="aud-cliente" onchange="loadAuditoria()" style="padding:8px 11px;border:1px solid var(--border-strong);border-radius:8px"></select>
+      </div>
+      <table>
+        <thead><tr><th>Horário (UTC)</th><th>Cliente</th><th>Script</th><th>Parâmetros</th><th>Status</th><th>exit</th><th>Duração</th></tr></thead>
+        <tbody id="aud-body"></tbody>
+      </table>
+    </section>
+
+    <!-- FROTA (Grafana) -->
+    <section class="view" id="view-frota">
+      <div class="view-head"><h2>Saúde da Frota — Docker em tempo real</h2></div>
+      <p class="muted" style="margin-top:-8px">OTel + Prometheus + Grafana. Rode <strong>update_agent</strong> ou <strong>cleanup_logs</strong> num cliente e veja os painéis reagirem.</p>
+      <iframe id="grafana-frame" title="Grafana"></iframe>
     </section>
   </main>
+
+  <!-- Drawer cliente -->
+  <div class="drawer" id="drawer">
+    <header>
+      <span id="dr-dot" class="dot"></span>
+      <div><div id="dr-nome" style="font-weight:650"></div><div id="dr-slug" class="slug"></div></div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn danger sm" onclick="deprovision()">Desprovisionar</button>
+        <button class="btn ghost sm" onclick="closeDrawer()">Fechar</button>
+      </div>
+    </header>
+    <div class="body">
+      <div class="muted" style="margin-bottom:6px">Manutenção</div>
+      <div id="dr-scripts"></div>
+      <div class="muted" style="margin:16px 0 6px">Saída</div>
+      <pre id="dr-out">—</pre>
+      <div class="muted" style="margin:16px 0 6px">Histórico recente</div>
+      <div id="dr-logs"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+  <div class="toasts" id="toasts"></div>
+
   <script>
     const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
     const token = () => $("token").value.trim();
     const headers = () => ({ "Content-Type": "application/json", "X-Isy-Token": token() });
-    let slugAtual = null;
+    const state = { tenants: [], tenantsMeta: [], scripts: [], current: null, grafana: null };
 
     async function api(path, opts = {}) {
       const res = await fetch(path, { headers: headers(), ...opts });
@@ -58,67 +250,304 @@
       if (!res.ok) throw new Error(body.detail || `HTTP ${res.status}`);
       return body;
     }
+    function toast(msg, type = "") {
+      const t = document.createElement("div");
+      t.className = "toast " + type; t.textContent = msg;
+      $("toasts").appendChild(t); setTimeout(() => t.remove(), 3200);
+    }
+    function setConn(ok) { $("conn").className = "conn " + (ok ? "ok" : "bad"); }
 
-    async function loadDashboard() {
+    /* ---- navegação ---- */
+    function switchTab(name) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+      document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
+      if (name === "scripts") loadScripts();
+      if (name === "token") fillClienteSelect();
+      if (name === "auditoria") { fillAuditSelect(); loadAuditoria(); }
+    }
+    async function refreshAll() { await loadClientes(); toast("Atualizado", "ok"); }
+
+    /* ---- CLIENTES ---- */
+    async function loadClientes() {
       try {
         const { data } = await api("/api/v1/admin/tenants/health");
-        $("grid").innerHTML = data.map((t) => `
-          <div class="card" onclick="abrir('${t.slug}')">
-            <div><span class="dot ${t.status_geral}"></span><strong>${t.nome}</strong></div>
-            <div class="muted">ult. manut.: ${t.ultima_manutencao ? t.ultima_manutencao.script_nome + " (" + t.ultima_manutencao.status + ")" : "nenhuma"}</div>
-            <div class="muted">backup: ${t.ultimo_backup ? "ok" : "nunca"}</div>
-          </div>`).join("");
-      } catch (e) { $("grid").innerHTML = `<div>${e.message}</div>`; }
+        state.tenants = data; setConn(true);
+        $("clientes-count").textContent = data.length + " cliente(s)";
+        $("grid").innerHTML = data.map(t => `
+          <div class="card click" onclick="openCliente('${t.slug}')">
+            <div class="name"><span class="dot ${t.status_geral} ${t.status_geral==='vermelho'?'pulse':''}"></span>${esc(t.nome)}</div>
+            <div class="slug">${esc(t.slug)}</div>
+            <div class="meta">
+              <span class="muted">últ. manutenção: ${t.ultima_manutencao ? esc(t.ultima_manutencao.script_nome)+" · "+t.ultima_manutencao.status : "nenhuma"}</span>
+              <span class="muted">backup: ${t.ultimo_backup ? "ok" : "nunca"}</span>
+            </div>
+          </div>`).join("") || `<div class="empty">Nenhum cliente. Clique em "Provisionar cliente".</div>`;
+      } catch (e) { setConn(false); $("grid").innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
     }
 
-    async function abrir(slug) {
-      slugAtual = slug;
-      $("detalhe").style.display = "block";
-      $("d-nome").textContent = slug;
-      $("d-out").textContent = "-";
-      const { data } = await api(`/api/v1/tenants/${slug}/scripts`);
-      $("d-scripts").innerHTML = data.map((s) => `
-        <div class="row">
-          <strong>${s.nome}</strong>
-          <input id="p-${s.script_id}" placeholder="${s.parametros_default || "sem parametros"}" />
-          <button onclick="run(${s.script_id})">executar</button>
-        </div>`).join("");
-      loadLogs();
-    }
-
-    async function run(sid) {
-      const raw = $(`p-${sid}`).value.trim();
-      const parametros = raw ? raw.split(/\s+/) : [];
-      $("d-out").textContent = "Executando...";
+    async function openCliente(slug) {
+      state.current = slug;
+      const t = state.tenants.find(x => x.slug === slug) || {};
+      $("dr-nome").textContent = t.nome || slug;
+      $("dr-slug").textContent = slug;
+      $("dr-dot").className = "dot " + (t.status_geral || "");
+      $("dr-out").textContent = "—";
+      $("drawer").classList.add("show");
       try {
-        const { data } = await api(`/api/v1/tenants/${slugAtual}/scripts/${sid}/run`, {
-          method: "POST", body: JSON.stringify({ parametros }) });
-        $("d-out").textContent = `# ${data.status} (exit ${data.exit_code})\n\n` + (data.stdout || "") + (data.stderr ? "\n[stderr]\n" + data.stderr : "");
-        loadLogs(); loadDashboard();
-      } catch (e) { $("d-out").textContent = e.message; }
+        const { data } = await api(`/api/v1/tenants/${slug}/scripts`);
+        $("dr-scripts").innerHTML = data.map(s => {
+          const ps = s.parametros_schema || [];
+          const inputs = ps.length
+            ? ps.map(p => `<input id="p-${s.script_id}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:140px" />`).join("")
+            : `<input id="p-${s.script_id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
+          return `
+          <div class="exec-row">
+            <span class="nm">${esc(s.nome)}</span>
+            ${inputs}
+            <button class="btn sm" onclick="runScript(${s.script_id}, ${ps.length})">executar</button>
+          </div>`;
+        }).join("") || `<div class="muted">Sem scripts vinculados.</div>`;
+      } catch (e) { $("dr-scripts").innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
+      loadDrawerLogs();
+    }
+    function closeDrawer() { $("drawer").classList.remove("show"); state.current = null; }
+
+    async function runScript(sid, nparams) {
+      let parametros;
+      if (nparams) {
+        parametros = Array.from(document.querySelectorAll(`[id^="p-${sid}-"]`)).map(c => c.value.trim());
+      } else {
+        const raw = ($(`p-${sid}`)?.value || "").trim();
+        parametros = raw ? raw.split(/\s+/) : [];
+      }
+      $("dr-out").textContent = "Executando...";
+      try {
+        const { data } = await api(`/api/v1/tenants/${state.current}/scripts/${sid}/run`, { method: "POST", body: JSON.stringify({ parametros }) });
+        $("dr-out").textContent = `# ${data.status} (exit ${data.exit_code}) · ${data.duracao_ms}ms\n\n` + (data.stdout || "") + (data.stderr ? "\n[stderr]\n" + data.stderr : "");
+        toast(data.status === "sucesso" ? "Executado com sucesso" : "Script retornou falha", data.status === "sucesso" ? "ok" : "err");
+        loadDrawerLogs(); loadClientes();
+      } catch (e) { $("dr-out").textContent = e.message; toast(e.message, "err"); }
+    }
+    async function loadDrawerLogs() {
+      try {
+        const { data } = await api(`/api/v1/tenants/${state.current}/logs`);
+        $("dr-logs").innerHTML = data.slice(0, 8).map(l => `
+          <div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
+            <span class="badge ${l.status==='sucesso'?'ok':l.status==='falha'?'fail':'neutral'}">${esc(l.status||l.tipo)}</span>
+            <span class="muted mono">${esc((l.ocorrido_em||'').replace('T',' ').slice(0,19))}</span>
+            <span style="font-size:12.5px">${esc(l.script_nome||l.tipo)}</span>
+          </div>`).join("") || `<div class="muted">Sem registros.</div>`;
+      } catch (_) {}
     }
 
-    async function loadLogs() {
-      const { data } = await api(`/api/v1/tenants/${slugAtual}/logs`);
-      $("d-logs").innerHTML = data.map((l) => `<div class="muted">${l.ocorrido_em} — ${l.script_nome || l.tipo} ${l.status || ""}</div>`).join("") || "<div class='muted'>sem registros</div>";
+    async function deprovision() {
+      if (!confirm(`Desprovisionar "${state.current}"? Isso remove os containers do cliente e o cadastro. Ação irreversível.`)) return;
+      try {
+        await api(`/api/v1/admin/tenants/${state.current}`, { method: "DELETE" });
+        toast("Cliente desprovisionado", "ok"); closeDrawer(); loadClientes();
+      } catch (e) { toast(e.message, "err"); }
     }
 
+    /* ---- PROVISIONAR (SSE) ---- */
+    function openProvision() {
+      modal("Provisionar novo cliente", `
+        <form id="prov-form">
+          <div class="field"><label>Nome do estabelecimento</label><input id="pv-nome" required minlength="2" placeholder="Ex.: Tux Burger" /></div>
+          <div class="field"><label>E-mail</label><input id="pv-email" type="email" required placeholder="dono@empresa.com" /></div>
+          <div class="field"><label>Plano</label><select id="pv-plano"><option value="free">Free</option><option value="pro">Pro</option></select></div>
+        </form>
+        <pre id="pv-log" style="display:none"></pre>
+        <div id="pv-cred" class="card" style="display:none;border-color:var(--green);margin-top:12px"></div>
+      `, [
+        { label: "Cancelar", cls: "ghost", act: closeModal },
+        { label: "Provisionar", cls: "", id: "pv-btn", act: submitProvision },
+      ]);
+    }
+    async function submitProvision() {
+      const nome = $("pv-nome").value.trim(), email = $("pv-email").value.trim(), plano = $("pv-plano").value;
+      if (nome.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast("Preencha nome e e-mail válidos", "err"); return; }
+      $("pv-btn").disabled = true;
+      const log = $("pv-log"); log.style.display = "block"; log.textContent = "";
+      try {
+        const res = await fetch("/api/v1/registro", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nome, email, plano }) });
+        if (!res.ok) { const b = await res.json().catch(()=>({})); throw new Error(b.detail || res.status); }
+        const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+        while (true) {
+          const { value, done } = await reader.read(); if (done) break;
+          buf += dec.decode(value, { stream: true }); let i;
+          while ((i = buf.indexOf("\n\n")) >= 0) { handleSse(buf.slice(0, i)); buf = buf.slice(i + 2); }
+        }
+      } catch (e) { log.textContent += "\nErro: " + e.message; toast(e.message, "err"); }
+      finally { $("pv-btn").disabled = false; }
+    }
+    function handleSse(chunk) {
+      let ev = "message", data = "";
+      for (const ln of chunk.split("\n")) { if (ln.startsWith("event:")) ev = ln.slice(6).trim(); else if (ln.startsWith("data:")) data += ln.slice(5).trim(); }
+      if (!data) return; const o = JSON.parse(data); const log = $("pv-log");
+      if (ev === "tenant") log.textContent += `Criando ambiente para "${o.nome}" (${o.slug})...\n`;
+      else if (ev === "log") { log.textContent += o.line + "\n"; log.scrollTop = log.scrollHeight; }
+      else if (ev === "done") {
+        $("pv-cred").style.display = "block";
+        $("pv-cred").innerHTML = `<strong>Ambiente provisionado ✓</strong>
+          <div class="muted" style="margin-top:6px">URL: <span class="mono">${esc(o.url)}</span></div>
+          <div class="muted">Token: <span class="mono">${esc(o.token)}</span></div>`;
+        toast("Cliente provisionado", "ok"); loadClientes();
+      }
+    }
+
+    /* ---- SCRIPTS CRUD ---- */
+    async function loadScripts() {
+      // tenantsMeta carrega os tenants completos (com id) so para resolver o nome
+      // do dono — sem sobrescrever state.tenants (que guarda a saude da frota).
+      if (!state.tenantsMeta.length) {
+        try { const { data } = await api("/api/v1/admin/tenants"); state.tenantsMeta = data; } catch (_) {}
+      }
+      try {
+        const { data } = await api("/api/v1/admin/scripts"); state.scripts = data; setConn(true);
+        $("scripts-body").innerHTML = data.map(s => `
+          <tr>
+            <td><strong>${esc(s.nome)}</strong></td>
+            <td class="mono" style="font-size:12px">${s.tipo === "template" ? esc(s.template || "") : esc(s.caminho)}</td>
+            <td class="muted">${esc((s.parametros_schema||[]).map(p=>p.nome).join(", ") || s.parametros || '—')}</td>
+            <td class="muted">${esc(s.descricao||'—')}</td>
+            <td><span class="badge neutral">${esc(s.categoria)}</span></td>
+            <td class="muted">${s.tenant_id ? esc((state.tenantsMeta.find(t=>t.id===s.tenant_id)||{}).nome || ("#"+s.tenant_id)) : "Global"}</td>
+            <td><label class="switch"><input type="checkbox" ${s.ativo?'checked':''} onchange="toggleScript(${s.id}, this.checked)"><span class="slider"></span></label></td>
+            <td><button class="btn ghost sm" onclick='openScript(${s.id})'>Editar</button></td>
+          </tr>`).join("") || `<tr><td colspan="8" class="empty">Catálogo vazio.</td></tr>`;
+      } catch (e) { setConn(false); $("scripts-body").innerHTML = `<tr><td colspan="8" class="empty">${esc(e.message)}</td></tr>`; }
+    }
+    function openScript(id) {
+      const s = id ? state.scripts.find(x => x.id === id) : null;
+      const tenantsOpts = ['<option value="">Global</option>']
+        .concat(state.tenantsMeta.map(t => `<option value="${t.id}" ${s?.tenant_id===t.id?'selected':''}>${esc(t.nome)}</option>`))
+        .join("");
+      modal(s ? "Editar script" : "Novo script", `
+        <div class="field"><label>Nome *</label><input id="sc-nome" value="${esc(s?.nome||'')}" placeholder="ex.: reinicia-agente" /></div>
+        <div class="field"><label>Tipo</label>
+          <select id="sc-tipo" onchange="toggleTipoCampos()">
+            <option value="arquivo" ${s?.tipo!=='template'?'selected':''}>Arquivo (.sh no volume)</option>
+            <option value="template" ${s?.tipo==='template'?'selected':''}>Template</option>
+          </select></div>
+        <div class="field" id="campo-arquivo"><label>Arquivo (.sh) *</label><input id="sc-caminho" value="${esc(s?.caminho||'')}" placeholder="cleanup_logs.sh" class="mono" /></div>
+        <div class="field" id="campo-template"><label>Template *</label>
+          <textarea id="sc-template" rows="3" class="mono" placeholder="docker restart {{container:agent}}">${esc(s?.template||'')}</textarea>
+          <div class="muted" style="font-size:11px">Placeholders: {{slug}} {{container:db|odoo|agent}} {{db}} {{logdir}} {{param:nome:int|slug}}</div></div>
+        <div class="field"><label>Dono</label><select id="sc-dono" ${s?'disabled':''}>${tenantsOpts}</select></div>
+        <div class="field"><label>Descrição curta</label><input id="sc-desc" value="${esc(s?.descricao||'')}" /></div>
+        <div class="field"><label>Categoria</label>
+          <select id="sc-cat">${["cleanup","backup","update","status","provision","other"].map(c=>`<option ${s?.categoria===c?'selected':''}>${c}</option>`).join("")}</select></div>
+        <div class="field" style="display:flex;align-items:center;gap:8px"><label style="margin:0">Ativo</label>
+          <label class="switch"><input id="sc-ativo" type="checkbox" ${s?(s.ativo?'checked':''):'checked'}><span class="slider"></span></label></div>
+      `, [
+        { label: "Cancelar", cls: "ghost", act: closeModal },
+        { label: s ? "Salvar" : "Cadastrar", cls: "", act: () => saveScript(id) },
+      ]);
+      toggleTipoCampos();
+    }
+    function toggleTipoCampos() {
+      const t = $("sc-tipo").value;
+      $("campo-arquivo").style.display = t === "arquivo" ? "" : "none";
+      $("campo-template").style.display = t === "template" ? "" : "none";
+    }
+    async function saveScript(id) {
+      const tipo = $("sc-tipo").value;
+      const body = {
+        nome: $("sc-nome").value.trim(), tipo,
+        caminho: tipo === "arquivo" ? $("sc-caminho").value.trim() : "",
+        template: tipo === "template" ? $("sc-template").value.trim() : null,
+        descricao: $("sc-desc").value.trim(),
+        categoria: $("sc-cat").value, ativo: $("sc-ativo").checked,
+      };
+      if (!id) { const dono = $("sc-dono").value; if (dono) body.tenant_id = parseInt(dono, 10); }
+      if (!body.nome || (tipo === "arquivo" && !body.caminho) || (tipo === "template" && !body.template)) {
+        toast("Preencha nome e arquivo/template", "err"); return;
+      }
+      try {
+        if (id) await api(`/api/v1/admin/scripts/${id}`, { method: "PUT", body: JSON.stringify(body) });
+        else await api("/api/v1/admin/scripts", { method: "POST", body: JSON.stringify(body) });
+        closeModal(); toast(id ? "Script atualizado" : "Script cadastrado", "ok"); loadScripts();
+      } catch (e) { toast(e.message, "err"); }
+    }
+    async function toggleScript(id, ativo) {
+      try { await api(`/api/v1/admin/scripts/${id}`, { method: "PUT", body: JSON.stringify({ ativo }) }); toast("Status atualizado", "ok"); }
+      catch (e) { toast(e.message, "err"); loadScripts(); }
+    }
+
+    /* ---- TOKEN ---- */
+    function fillClienteSelect() {
+      $("tok-cliente").innerHTML = state.tenants.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)} (${esc(t.slug)})</option>`).join("");
+    }
+    async function rotateAdmin() {
+      const tk = $("adm-token").value.trim(); if (tk.length < 8) { toast("Token deve ter ≥ 8 caracteres", "err"); return; }
+      try { await api("/api/v1/admin/token", { method: "PUT", body: JSON.stringify({ token: tk }) });
+        toast("Token admin rotacionado. Atualize o campo do topo.", "ok"); $("adm-token").value = ""; }
+      catch (e) { toast(e.message, "err"); }
+    }
+    async function rotateTenant() {
+      const slug = $("tok-cliente").value, tk = $("tok-novo").value.trim();
+      if (tk.length < 8) { toast("Token deve ter ≥ 8 caracteres", "err"); return; }
+      try { await api(`/api/v1/admin/tenants/${slug}/token`, { method: "PUT", body: JSON.stringify({ token: tk }) });
+        toast("Token do cliente rotacionado", "ok"); $("tok-novo").value = ""; }
+      catch (e) { toast(e.message, "err"); }
+    }
+
+    /* ---- AUDITORIA ---- */
+    function fillAuditSelect() {
+      $("aud-cliente").innerHTML = `<option value="__all">Todos os clientes</option>` +
+        state.tenants.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)}</option>`).join("");
+    }
+    async function loadAuditoria() {
+      const sel = $("aud-cliente").value || "__all";
+      const alvos = sel === "__all" ? state.tenants.map(t => t.slug) : [sel];
+      const linhas = [];
+      for (const slug of alvos) {
+        try {
+          const { data } = await api(`/api/v1/tenants/${slug}/logs`);
+          const nome = (state.tenants.find(t => t.slug === slug) || {}).nome || slug;
+          data.forEach(l => linhas.push({ ...l, _nome: nome }));
+        } catch (_) {}
+      }
+      linhas.sort((a, b) => (b.ocorrido_em || "").localeCompare(a.ocorrido_em || ""));
+      $("aud-body").innerHTML = linhas.slice(0, 100).map(l => `
+        <tr>
+          <td class="mono" style="font-size:12px">${esc((l.ocorrido_em||'').replace('T',' ').slice(0,19))}</td>
+          <td>${esc(l._nome)}</td>
+          <td>${esc(l.script_nome||l.tipo)}</td>
+          <td class="muted mono" style="font-size:12px">${esc(l.parametros||'—')}</td>
+          <td><span class="badge ${l.status==='sucesso'?'ok':l.status==='falha'?'fail':'neutral'}">${esc(l.status||'—')}</span></td>
+          <td class="muted">${l.exit_code ?? '—'}</td>
+          <td class="muted">${l.duracao_ms != null ? l.duracao_ms + 'ms' : '—'}</td>
+        </tr>`).join("") || `<tr><td colspan="7" class="empty">Sem execuções registradas.</td></tr>`;
+    }
+
+    /* ---- modal infra ---- */
+    function modal(title, bodyHtml, actions) {
+      $("overlay").innerHTML = `
+        <div class="modal">
+          <header><h3>${esc(title)}</h3><button class="x" onclick="closeModal()">×</button></header>
+          <div class="body">${bodyHtml}</div>
+          <div class="foot">${actions.map((a,i)=>`<button class="btn ${a.cls}" ${a.id?`id="${a.id}"`:''} data-i="${i}">${esc(a.label)}</button>`).join("")}</div>
+        </div>`;
+      $("overlay").classList.add("show");
+      $("overlay").querySelectorAll(".foot .btn").forEach(b => b.onclick = actions[+b.dataset.i].act);
+    }
+    function closeModal() { $("overlay").classList.remove("show"); $("overlay").innerHTML = ""; }
+    $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") closeModal(); });
+
+    /* ---- config / grafana ---- */
     async function loadConfig() {
       try {
-        const res = await fetch("/api/v1/config");
-        const { data } = await res.json();
+        const res = await fetch("/api/v1/config"); const { data } = await res.json();
         if (data && data.grafana_url) {
-          const btn = $("btn-grafana");
-          btn.onclick = () => window.open(data.grafana_url, "_blank");
-          btn.style.display = "";
+          state.grafana = data.grafana_url; $("tab-frota").style.display = "";
           $("grafana-frame").src = `${data.grafana_url}/d/isyone-fleet?kiosk&refresh=10s&theme=light`;
-          $("obs").style.display = "";
         }
-      } catch (_) { /* sem config = botao continua oculto */ }
+      } catch (_) {}
     }
 
     loadConfig();
-    loadDashboard();
+    loadClientes();
   </script>
 </body>
 </html>

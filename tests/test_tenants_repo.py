@@ -41,3 +41,35 @@ def test_delete_remove_tenant_com_eventos(client):
         )
         tenants_repo.delete(db, t)
         assert tenants_repo.get_by_slug(db, "cliente-x") is None
+
+
+def test_delete_tenant_remove_scripts_owned(client):
+    from app.core.db import SessionLocal
+    from app.repositories import scripts_repo
+    from app.schemas import ScriptCreate
+
+    with SessionLocal() as db:
+        t = tenants_repo.create(
+            db,
+            TenantCreate(
+                slug="dono-del",
+                nome="Dono",
+                dominio="dono.isy.one",
+                porta=8401,
+                db_name="db_dono",
+                token="tok-dono-aaaaaa",
+            ),
+        )
+        s = scripts_repo.create(
+            db,
+            ScriptCreate(
+                nome="owned-del",
+                tipo="template",
+                template="echo {{slug}}",
+                categoria="other",
+                tenant_id=t.id,
+            ),
+        )
+        sid = s.id
+        tenants_repo.delete(db, t)
+        assert scripts_repo.get(db, sid) is None

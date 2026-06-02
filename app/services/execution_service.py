@@ -18,11 +18,24 @@ from app.core.config import settings
 from app.core.security import ScriptPathError, resolve_script_path
 from app.models import Event, Script, Tenant
 from app.repositories import events_repo
-from app.services import alert_service
+from app.services import alert_service, template_service
 
 
 class ScriptNotExecutable(RuntimeError):
     """Script ativo, mas arquivo ausente ou caminho invalido."""
+
+
+def _effective_params(tenant: Tenant, script: Script, parametros: list[str]) -> list[str]:
+    """Parametros efetivos da execucao, fixando o alvo de provisao no proprio tenant.
+
+    provisionar.sh recebe <slug> <dominio> <porta> por posicao. Aceitar esses valores
+    do cliente permitiria provisionar/recriar a stack de OUTRO tenant (os containers e o
+    banco sao recriados do zero). Para a categoria 'provision' o alvo e sempre o proprio
+    tenant; quaisquer parametros recebidos sao ignorados.
+    """
+    if script.categoria == "provision":
+        return [tenant.slug, tenant.dominio, str(tenant.porta)]
+    return parametros
 
 
 def _build_env(tenant: Tenant) -> dict:
@@ -42,35 +55,17 @@ def _build_env(tenant: Tenant) -> dict:
     return env
 
 
-def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> Event:
-    try:
-        path = resolve_script_path(script.caminho)
-    except ScriptPathError as exc:
-        raise ScriptNotExecutable(str(exc)) from exc
-    if not path.is_file():
-        raise ScriptNotExecutable(f"Arquivo do script nao encontrado: {script.caminho}")
-
-    # shell=False (default): cada item da lista e um argv isolado, sem interpretacao
-    # de metacaracteres de shell. Esta e a barreira contra command injection.
-    argv = [str(path), *parametros]
-    started = time.perf_counter()
-    try:
-        proc = subprocess.run(
-            argv,
-            capture_output=True,
-            text=True,
-            timeout=settings.exec_timeout,
-            check=False,
-            env=_build_env(tenant),
-        )
-        duracao_ms = int((time.perf_counter() - started) * 1000)
-        status = "sucesso" if proc.returncode == 0 else "falha"
-        stdout, stderr, exit_code = proc.stdout, proc.stderr, proc.returncode
-    except subprocess.TimeoutExpired:
-        duracao_ms = int((time.perf_counter() - started) * 1000)
-        status, exit_code = "falha", None
-        stdout, stderr = "", f"Tempo limite de {settings.exec_timeout}s excedido."
-
+def _record(
+    db: Session,
+    tenant: Tenant,
+    script: Script,
+    parametros: list[str],
+    status: str,
+    stdout: str,
+    stderr: str,
+    exit_code: int | None,
+    duracao_ms: int,
+) -> Event:
     payload = {
         "script_nome": script.nome,
         "categoria": script.categoria,
@@ -89,6 +84,101 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
     return event
 
 
+def _run_template(
+    tenant: Tenant, script: Script, valores: list[str]
+) -> tuple[str, str, str, int | None]:
+    """Renderiza e executa um template. Remoto via _ssh.sh; local simulado."""
+    rendered = template_service.render(script.template, tenant, valores)
+    if tenant.ssh_host:
+        ssh = resolve_script_path("_ssh.sh")
+        proc = subprocess.run(
+            [str(ssh), rendered],
+            capture_output=True,
+            text=True,
+            timeout=settings.exec_timeout,
+            check=False,
+            env=_build_env(tenant),
+        )
+        status = "sucesso" if proc.returncode == 0 else "falha"
+        return status, proc.stdout, proc.stderr, proc.returncode
+    return "sucesso", f"[local simulado] {rendered}\nOK (simulado).", "", 0
+
+
+def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> Event:
+    if script.tipo == "template":
+        started = time.perf_counter()
+        try:
+            status, stdout, stderr, exit_code = _run_template(tenant, script, parametros)
+        except template_service.TemplateError as exc:
+            raise ScriptNotExecutable(str(exc)) from exc
+        except subprocess.TimeoutExpired:
+            status, stdout, stderr, exit_code = (
+                "falha",
+                "",
+                f"Tempo limite de {settings.exec_timeout}s excedido.",
+                None,
+            )
+        duracao_ms = int((time.perf_counter() - started) * 1000)
+        return _record(
+            db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms
+        )
+
+    try:
+        path = resolve_script_path(script.caminho)
+    except ScriptPathError as exc:
+        raise ScriptNotExecutable(str(exc)) from exc
+    if not path.is_file():
+        raise ScriptNotExecutable(f"Arquivo do script nao encontrado: {script.caminho}")
+
+    # shell=False (default): cada item da lista e um argv isolado, sem interpretacao
+    # de metacaracteres de shell. Esta e a barreira contra command injection.
+    parametros = _effective_params(tenant, script, parametros)
+    argv = [str(path), *parametros]
+    started = time.perf_counter()
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=settings.exec_timeout,
+            check=False,
+            env=_build_env(tenant),
+        )
+        duracao_ms = int((time.perf_counter() - started) * 1000)
+        status = "sucesso" if proc.returncode == 0 else "falha"
+        stdout, stderr, exit_code = proc.stdout, proc.stderr, proc.returncode
+    except subprocess.TimeoutExpired:
+        duracao_ms = int((time.perf_counter() - started) * 1000)
+        status, exit_code = "falha", None
+        stdout, stderr = "", f"Tempo limite de {settings.exec_timeout}s excedido."
+    return _record(
+        db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms
+    )
+
+
+def deprovision_remote(tenant: Tenant) -> str:
+    """Best-effort: remove os containers do cliente no servidor (deprovisionar.sh).
+
+    Nao levanta excecao se falhar — a remocao do tenant no banco prossegue mesmo
+    que o servidor esteja inacessivel. Retorna a saida para log/debug.
+    """
+    try:
+        path = resolve_script_path("deprovisionar.sh")
+        if not path.is_file():
+            return ""
+        proc = subprocess.run(
+            [str(path), tenant.slug],
+            capture_output=True,
+            text=True,
+            timeout=settings.exec_timeout,
+            check=False,
+            env=_build_env(tenant),
+        )
+        return proc.stdout + proc.stderr
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
 def stream_script(
     tenant: Tenant, script: Script, parametros: list[str]
 ) -> Iterator[tuple[str, object]]:
@@ -105,6 +195,7 @@ def stream_script(
     if not path.is_file():
         raise ScriptNotExecutable(f"Arquivo do script nao encontrado: {script.caminho}")
 
+    parametros = _effective_params(tenant, script, parametros)
     argv = [str(path), *parametros]
     started = time.perf_counter()
     proc = subprocess.Popen(

@@ -40,6 +40,8 @@ cat > /opt/isyone/bin/cleanup_logs <<'EOF'
 set -euo pipefail
 SLUG="${1:?uso: cleanup_logs <slug> [dias]}"
 DIAS="${2:-30}"
+printf '%s' "$SLUG" | grep -qE '^[a-z0-9-]+$' || { echo "slug invalido." >&2; exit 2; }
+printf '%s' "$DIAS" | grep -qE '^[0-9]+$' || { echo "dias invalido." >&2; exit 2; }
 BASE="/opt/isyone/clientes/${SLUG}/logs/cupons"
 [ -d "$BASE" ] || { echo "sem diretorio de logs para ${SLUG}"; exit 0; }
 human() { numfmt --to=iec --suffix=B "${1:-0}" 2>/dev/null || echo "${1:-0}B"; }
@@ -59,6 +61,7 @@ cat > /opt/isyone/bin/update_agent <<'EOF'
 # Reinicia o container do agente de impressao iFood do cliente.
 set -euo pipefail
 SLUG="${1:?uso: update_agent <slug>}"
+printf '%s' "$SLUG" | grep -qE '^[a-z0-9-]+$' || { echo "slug invalido." >&2; exit 2; }
 CONT="isyone-${SLUG}-ifood-agent"
 echo "Atualizando agente de impressao iFood — cliente: ${SLUG}"
 docker restart "$CONT" >/dev/null
@@ -73,6 +76,7 @@ cat > /opt/isyone/bin/backup_db <<'EOF'
 # pg_dump do banco do cliente para um arquivo .sql.gz e reporta tamanho real.
 set -euo pipefail
 SLUG="${1:?uso: backup_db <slug>}"
+printf '%s' "$SLUG" | grep -qE '^[a-z0-9-]+$' || { echo "slug invalido." >&2; exit 2; }
 CONT="isyone-${SLUG}-db"
 DB="db_$(printf '%s' "$SLUG" | tr '-' '_')"
 DEST="/opt/isyone/clientes/${SLUG}/backups"
@@ -93,6 +97,9 @@ set -euo pipefail
 SLUG="${1:?uso: provisionar <slug> [dominio] [porta]}"
 DOMINIO="${2:-${SLUG}.isy.one}"
 PORTA="${3:-8080}"
+printf '%s' "$SLUG" | grep -qE '^[a-z0-9-]+$' || { echo "slug invalido." >&2; exit 2; }
+printf '%s' "$DOMINIO" | grep -qE '^[A-Za-z0-9.-]+$' || { echo "dominio invalido." >&2; exit 2; }
+printf '%s' "$PORTA" | grep -qE '^[0-9]+$' || { echo "porta invalida." >&2; exit 2; }
 DB="db_$(printf '%s' "$SLUG" | tr '-' '_')"
 echo "--- [1/6] Criando estrutura e isolamento para: ${SLUG}"
 mkdir -p "/opt/isyone/clientes/${SLUG}/logs/cupons" "/opt/isyone/clientes/${SLUG}/backups"
@@ -116,7 +123,19 @@ echo "URL: https://${DOMINIO}"
 echo "DB: ${DB}"
 EOF
 
-chmod 755 /opt/isyone/bin/cleanup_logs /opt/isyone/bin/update_agent /opt/isyone/bin/backup_db /opt/isyone/bin/provisionar
+cat > /opt/isyone/bin/deprovisionar <<'EOF'
+#!/usr/bin/env bash
+# Desprovisiona um cliente: remove containers e diretorio.
+set -euo pipefail
+SLUG="${1:?uso: deprovisionar <slug>}"
+printf '%s' "$SLUG" | grep -qE '^[a-z0-9-]+$' || { echo "slug invalido." >&2; exit 2; }
+echo "Removendo containers do cliente ${SLUG}..."
+docker rm -f "isyone-${SLUG}-db" "isyone-${SLUG}-odoo" "isyone-${SLUG}-ifood-agent" >/dev/null 2>&1 || true
+rm -rf "/opt/isyone/clientes/${SLUG}"
+echo "Cliente ${SLUG} desprovisionado."
+EOF
+
+chmod 755 /opt/isyone/bin/cleanup_logs /opt/isyone/bin/update_agent /opt/isyone/bin/backup_db /opt/isyone/bin/provisionar /opt/isyone/bin/deprovisionar
 
 echo "=== [4/6] Diretorios do cliente (${SLUG}) ==="
 # /opt/isyone/clientes pertence ao isyone para o self-service criar novos clientes.
