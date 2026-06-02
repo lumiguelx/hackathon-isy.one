@@ -10,6 +10,10 @@
 > **mandatória pela banca** e substitui as escolhas de TypeScript do ADR 0003 para
 > este escopo. A formalização (novo ADR + ajuste de README/arquitetura) é tarefa
 > à parte.
+>
+> **Evolução:** o modelo de persistência deste PRD (tabela `executions`) evoluiu para
+> multi-tenant + event sourcing (`events`) — ver [ADR 0005](../adr/0005-multi-tenant-event-sourcing.md)
+> e o [design](2026-06-01-multi-tenant-event-sourcing-design.md).
 
 ---
 

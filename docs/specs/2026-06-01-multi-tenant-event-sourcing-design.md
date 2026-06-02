@@ -3,7 +3,7 @@
 - **Data:** 2026-06-01
 - **Autor(es):** @lumiguelx
 - **Status:** aprovado (brainstorming)
-- **Base:** evolui o [PRD](../../specs/2026-06-01-isy-shell-automation-api.md) e o [ADR 0004](../../adr/0004-stack-python-fastapi.md)
+- **Base:** evolui o [PRD](2026-06-01-isy-shell-automation-api.md) e o [ADR 0004](../adr/0004-stack-python-fastapi.md)
 
 ## Contexto e problema
 

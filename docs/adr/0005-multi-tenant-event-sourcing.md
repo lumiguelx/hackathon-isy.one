@@ -3,7 +3,7 @@
 - **Data:** 2026-06-01
 - **Status:** aceita
 - **Relacionada:** evolui o [ADR 0004](0004-stack-python-fastapi.md); detalhada no
-  [design](../superpowers/specs/2026-06-01-multi-tenant-event-sourcing-design.md)
+  [design](../specs/2026-06-01-multi-tenant-event-sourcing-design.md)
 
 ## Contexto
 
