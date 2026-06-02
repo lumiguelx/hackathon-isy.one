@@ -1,8 +1,12 @@
 # 0003. Stack e arquitetura do projeto
 
 - **Data:** 2026-05-27
-- **Status:** aceita
+- **Status:** substituída por [ADR 0004](0004-stack-python-fastapi.md)
 - **Relacionada:** substitui a parte "tooling adiado" de [ADR 0002](0002-monorepo-tooling-deferred.md)
+
+> **Obsoleta.** Decidida antes da definição do tema, com o pressuposto de stack livre.
+> O desafio Isy.One tornou Python/FastAPI mandatório — ver [ADR 0004](0004-stack-python-fastapi.md).
+> Conteúdo abaixo mantido por registro histórico.
 
 ## Contexto
 

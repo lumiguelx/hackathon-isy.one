@@ -1,43 +1,42 @@
 # Arquitetura
 
 Material de referência do projeto — útil também para a apresentação.
-Stack e justificativas em [ADR 0003](adr/0003-stack-e-arquitetura.md).
+Stack e justificativas em [ADR 0004](adr/0004-stack-python-fastapi.md).
+Escopo completo no [PRD](specs/2026-06-01-isy-shell-automation-api.md).
 
 ## Visão geral
 
-Monorepo TypeScript (Turborepo + pnpm). Frontend e backend são apps separados que
-viram serviços independentes no Railway, conversando pela rede privada do projeto.
+Serviço único em **Python (FastAPI)** que executa, de forma controlada e auditada, os
+shell scripts de manutenção dos servidores Isy.One — substituindo o acesso manual via SSH.
+Tudo roda dentro de um container Docker; os scripts vivem no host e são lidos via volume.
 
 ```
-Navegador
-   │  HTTPS
+Operador / curl / Swagger
+   │  HTTP + header X-Isy-Token
    ▼
-[web]  Next.js (App Router)
-   │  HTTP (rede interna Railway)
+[api]  FastAPI  ──▶  rota → service → repository
+   │        │
+   │        └─▶ subprocess.run([script, *params], shell=False, timeout)
+   │                          │  lê .sh via volume
+   │                          ▼
+   │                    [/opt/isyone/scripts]  (volume Docker, host)
    ▼
-[api]  Fastify  ──▶  rota → service → repository
-   │                                   │
-   ├──────────────▶ [Postgres]  (banco primário, via Prisma)
-   └──────────────▶ [Redis]     (cache / fila / sessão — opcional, via ioredis)
+[banco]  SQLite (demo) / PostgreSQL  — auditoria de cada execução
 ```
 
-## Estrutura do monorepo
+## Estrutura do serviço
 
 ```
 .
-├── apps/
-│   ├── web/                 # Next.js — serviço "web"
-│   └── api/                 # Fastify — serviço "api"
-│       └── src/
-│           ├── routes/      # entrada HTTP; valida input com schema de shared
-│           ├── services/    # regra de negócio (não conhece HTTP nem SQL)
-│           ├── repositories/# acesso a dados (Prisma / Redis)
-│           ├── lib/         # db, redis, config
-│           └── server.ts
-├── packages/
-│   └── shared/              # tipos + schemas Zod compartilhados por web e api
-├── turbo.json
-├── pnpm-workspace.yaml
+├── app/
+│   ├── routes/        # entrada HTTP; valida input (Pydantic), monta response
+│   ├── services/      # regra de negócio (execução, whitelist) — não conhece HTTP nem SQL
+│   ├── repositories/  # acesso a dados (scripts, executions, config)
+│   ├── core/          # auth (X-Isy-Token), config, db, segurança
+│   └── main.py        # cria o app FastAPI
+├── scripts/           # exemplos de .sh (no deploy, vêm via volume do host)
+├── Dockerfile         # imagem leve python:3.11-slim/alpine
+├── requirements.txt
 └── docs/
 ```
 
@@ -45,32 +44,42 @@ Navegador
 
 | Camada | Responsabilidade | Conhece |
 |--------|------------------|---------|
-| rota/controller | receber request, validar input (Zod), montar response | HTTP |
-| service | regra de negócio | nada de HTTP nem SQL |
-| repository | ler/gravar dados | Prisma / Redis |
+| rota/controller | receber request, validar input (Pydantic), montar response | HTTP |
+| service | regra de negócio (execução, whitelist, validação de path) | nada de HTTP nem SQL |
+| repository | ler/gravar dados (scripts, execuções, config) | SQL/ORM |
 
 Regra: dependências apontam só para dentro (rota → service → repository), nunca o contrário.
 
-## Dados no frontend
+## Segurança
 
-- **RSC (Server Components)**: dados iniciais/estáticos buscados no servidor.
-- **TanStack Query**: server state interativo no cliente — cache, refetch, mutations,
-  invalidação, optimistic updates.
+- **Auth por header `X-Isy-Token`** em todas as rotas sensíveis (dependency do FastAPI);
+  ausência/divergência → 401. Comparação com `secrets.compare_digest`.
+- **Whitelist:** só executa scripts cadastrados e ativos (resolvidos por id no banco),
+  nunca string arbitrária do request.
+- **Anti command injection:** `subprocess.run` sempre com lista de argumentos e
+  `shell=False`; parâmetros entram como itens da lista, nunca interpolados.
+- **Anti path traversal:** caminho normalizado e obrigado a residir no diretório montado.
+- **Timeout** em toda execução; token nunca aparece em logs nem em respostas.
 
-## Deploy no Railway
+## Persistência
 
-- **1 projeto Railway** com 4 serviços: `web`, `api`, `Postgres`, `Redis`.
-- `web` e `api` apontam para o mesmo repo, cada um com **Root Directory** próprio
-  (`apps/web`, `apps/api`). O **Railpack** containeriza cada um automaticamente
-  (sem Dockerfile; dá para adicionar um se precisar de controle fino).
-- `Postgres` e `Redis` são plugins gerenciados — injetam `DATABASE_URL` / `REDIS_URL`
-  via *reference variables* na rede interna; nada de banco exposto à internet.
-- Fluxo: **navegador → web → api → Postgres/Redis**.
+Banco relacional (SQLite na demo, PostgreSQL para ambiente mais real). Tabelas:
+`scripts` (cadastro), `executions` (auditoria: horário, script, parâmetros, status,
+exit code) e `config` (token rotacionável).
+
+## Deploy
+
+- Entregável é um **Dockerfile** sobre `python:3.11-slim` (ou `-alpine`); só deps de
+  runtime na imagem final.
+- **Volume** monta o diretório de scripts do host → `/opt/isyone/scripts` (read-only).
+- Execução sempre via container — **nunca** no terminal do host.
+- Config via env (`ISY_TOKEN` inicial, `DATABASE_URL`, `SCRIPTS_DIR`).
+- Railway segue viável (build por Dockerfile), mas não é requisito do desafio.
 
 ## Pitch (1 parágrafo)
 
-> Monorepo TypeScript com Turborepo. Frontend Next.js e backend Fastify em camadas
-> (rota → serviço → repositório), com tipos e validação compartilhados via Zod.
-> Postgres como banco primário e Redis para cache/filas. No Railway cada parte é um
-> serviço containerizado automaticamente pelo Railpack, comunicando pela rede privada
-> do projeto.
+> API em Python/FastAPI que elimina o SSH manual: o suporte dispara, por uma requisição
+> autenticada com token, os scripts de manutenção dos servidores Isy.One. A execução usa
+> `subprocess` de forma isolada num container Docker (scripts lidos por volume), só roda
+> itens de uma whitelist — blindando contra command injection — e grava auditoria completa
+> de cada chamada no banco. Diferencial: alertas em tempo real no Discord/Telegram.
