@@ -3,7 +3,6 @@ import pytest
 from app.core.db import SessionLocal
 from app.repositories import events_repo, scripts_repo, tenants_repo
 from app.schemas import ScriptCreate, TenantCreate
-from app.schemas import ScriptCreate as _SC
 from app.services import execution_service
 from tests.conftest import client  # noqa: F401
 
@@ -64,7 +63,7 @@ def test_run_template_local_simulado_grava_evento(client):
         )
         s = scripts_repo.create(
             db,
-            _SC(
+            ScriptCreate(
                 nome="reinicia",
                 tipo="template",
                 template="docker restart {{container:agent}}",
@@ -91,7 +90,7 @@ def test_run_template_param_invalido_levanta(client):
         )
         s = scripts_repo.create(
             db,
-            _SC(
+            ScriptCreate(
                 nome="limpa",
                 tipo="template",
                 template="cleanup {{param:dias:int}}",
