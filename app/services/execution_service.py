@@ -18,7 +18,7 @@ from app.core.config import settings
 from app.core.security import ScriptPathError, resolve_script_path
 from app.models import Event, Script, Tenant
 from app.repositories import events_repo
-from app.services import alert_service
+from app.services import alert_service, template_service
 
 
 class ScriptNotExecutable(RuntimeError):
@@ -55,7 +55,74 @@ def _build_env(tenant: Tenant) -> dict:
     return env
 
 
+def _record(
+    db: Session,
+    tenant: Tenant,
+    script: Script,
+    parametros: list[str],
+    status: str,
+    stdout: str,
+    stderr: str,
+    exit_code: int | None,
+    duracao_ms: int,
+) -> Event:
+    payload = {
+        "script_nome": script.nome,
+        "categoria": script.categoria,
+        "parametros": " ".join(parametros),
+        "status": status,
+        "exit_code": exit_code,
+        "stdout": stdout[: settings.output_limit],
+        "stderr": stderr[: settings.output_limit],
+        "duracao_ms": duracao_ms,
+    }
+    event = events_repo.append(
+        db, ev.EXECUTION_COMPLETED, payload, tenant_id=tenant.id, script_id=script.id
+    )
+    if status == "falha":
+        alert_service.notify_failure(tenant.slug, payload)
+    return event
+
+
+def _run_template(
+    tenant: Tenant, script: Script, valores: list[str]
+) -> tuple[str, str, str, int | None]:
+    """Renderiza e executa um template. Remoto via _ssh.sh; local simulado."""
+    rendered = template_service.render(script.template, tenant, valores)
+    if tenant.ssh_host:
+        ssh = resolve_script_path("_ssh.sh")
+        proc = subprocess.run(
+            [str(ssh), rendered],
+            capture_output=True,
+            text=True,
+            timeout=settings.exec_timeout,
+            check=False,
+            env=_build_env(tenant),
+        )
+        status = "sucesso" if proc.returncode == 0 else "falha"
+        return status, proc.stdout, proc.stderr, proc.returncode
+    return "sucesso", f"[local simulado] {rendered}\nOK (simulado).", "", 0
+
+
 def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> Event:
+    if script.tipo == "template":
+        started = time.perf_counter()
+        try:
+            status, stdout, stderr, exit_code = _run_template(tenant, script, parametros)
+        except template_service.TemplateError as exc:
+            raise ScriptNotExecutable(str(exc)) from exc
+        except subprocess.TimeoutExpired:
+            status, stdout, stderr, exit_code = (
+                "falha",
+                "",
+                f"Tempo limite de {settings.exec_timeout}s excedido.",
+                None,
+            )
+        duracao_ms = int((time.perf_counter() - started) * 1000)
+        return _record(
+            db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms
+        )
+
     try:
         path = resolve_script_path(script.caminho)
     except ScriptPathError as exc:
@@ -84,23 +151,9 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
         duracao_ms = int((time.perf_counter() - started) * 1000)
         status, exit_code = "falha", None
         stdout, stderr = "", f"Tempo limite de {settings.exec_timeout}s excedido."
-
-    payload = {
-        "script_nome": script.nome,
-        "categoria": script.categoria,
-        "parametros": " ".join(parametros),
-        "status": status,
-        "exit_code": exit_code,
-        "stdout": stdout[: settings.output_limit],
-        "stderr": stderr[: settings.output_limit],
-        "duracao_ms": duracao_ms,
-    }
-    event = events_repo.append(
-        db, ev.EXECUTION_COMPLETED, payload, tenant_id=tenant.id, script_id=script.id
+    return _record(
+        db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms
     )
-    if status == "falha":
-        alert_service.notify_failure(tenant.slug, payload)
-    return event
 
 
 def deprovision_remote(tenant: Tenant) -> str:
