@@ -242,7 +242,7 @@
     const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
     const token = () => $("token").value.trim();
     const headers = () => ({ "Content-Type": "application/json", "X-Isy-Token": token() });
-    const state = { tenants: [], scripts: [], current: null, grafana: null };
+    const state = { tenants: [], tenantsMeta: [], scripts: [], current: null, grafana: null };
 
     async function api(path, opts = {}) {
       const res = await fetch(path, { headers: headers(), ...opts });
@@ -298,7 +298,7 @@
         $("dr-scripts").innerHTML = data.map(s => {
           const ps = s.parametros_schema || [];
           const inputs = ps.length
-            ? ps.map(p => `<input id="p-${s.script_id}-${p.nome}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:140px" />`).join("")
+            ? ps.map(p => `<input id="p-${s.script_id}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:140px" />`).join("")
             : `<input id="p-${s.script_id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
           return `
           <div class="exec-row">
@@ -397,8 +397,10 @@
 
     /* ---- SCRIPTS CRUD ---- */
     async function loadScripts() {
-      if (!state.tenants.length || !state.tenants.some(t => t.id != null)) {
-        try { const { data } = await api("/api/v1/admin/tenants"); state.tenants = data; } catch (_) {}
+      // tenantsMeta carrega os tenants completos (com id) so para resolver o nome
+      // do dono — sem sobrescrever state.tenants (que guarda a saude da frota).
+      if (!state.tenantsMeta.length) {
+        try { const { data } = await api("/api/v1/admin/tenants"); state.tenantsMeta = data; } catch (_) {}
       }
       try {
         const { data } = await api("/api/v1/admin/scripts"); state.scripts = data; setConn(true);
@@ -409,7 +411,7 @@
             <td class="muted">${esc((s.parametros_schema||[]).map(p=>p.nome).join(", ") || s.parametros || '—')}</td>
             <td class="muted">${esc(s.descricao||'—')}</td>
             <td><span class="badge neutral">${esc(s.categoria)}</span></td>
-            <td class="muted">${s.tenant_id ? esc((state.tenants.find(t=>t.id===s.tenant_id)||{}).nome || ("#"+s.tenant_id)) : "Global"}</td>
+            <td class="muted">${s.tenant_id ? esc((state.tenantsMeta.find(t=>t.id===s.tenant_id)||{}).nome || ("#"+s.tenant_id)) : "Global"}</td>
             <td><label class="switch"><input type="checkbox" ${s.ativo?'checked':''} onchange="toggleScript(${s.id}, this.checked)"><span class="slider"></span></label></td>
             <td><button class="btn ghost sm" onclick='openScript(${s.id})'>Editar</button></td>
           </tr>`).join("") || `<tr><td colspan="8" class="empty">Catálogo vazio.</td></tr>`;
@@ -418,7 +420,7 @@
     function openScript(id) {
       const s = id ? state.scripts.find(x => x.id === id) : null;
       const tenantsOpts = ['<option value="">Global</option>']
-        .concat(state.tenants.map(t => `<option value="${t.id}" ${s?.tenant_id===t.id?'selected':''}>${esc(t.nome)}</option>`))
+        .concat(state.tenantsMeta.map(t => `<option value="${t.id}" ${s?.tenant_id===t.id?'selected':''}>${esc(t.nome)}</option>`))
         .join("");
       modal(s ? "Editar script" : "Novo script", `
         <div class="field"><label>Nome *</label><input id="sc-nome" value="${esc(s?.nome||'')}" placeholder="ex.: reinicia-agente" /></div>
