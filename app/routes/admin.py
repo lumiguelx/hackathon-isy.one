@@ -25,7 +25,7 @@ from app.schemas import (
     TenantUpdate,
     TokenUpdate,
 )
-from app.services import execution_service, health_service, script_service
+from app.services import execution_service, health_service, script_service, template_service
 
 router = APIRouter(
     prefix="/api/v1/admin", tags=["Administracao"], dependencies=[Depends(verify_admin)]
@@ -37,7 +37,14 @@ def _tenant_out(t) -> dict:
 
 
 def _script_out(s) -> dict:
-    return ScriptOut.model_validate(s).model_dump(mode="json")
+    out = ScriptOut.model_validate(s).model_dump(mode="json")
+    # Inclui os parametros declarados no template para uso no frontend.
+    out["parametros_schema"] = (
+        template_service.extract_params(s.template)
+        if s.tipo == "template" and s.template
+        else []
+    )
+    return out
 
 
 @router.get("/tenants")
@@ -107,8 +114,14 @@ def bind_script(
     tenant = tenants_repo.get_by_slug(db, slug)
     if tenant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
-    if scripts_repo.get(db, body.script_id) is None:
+    script = scripts_repo.get(db, body.script_id)
+    if script is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Script nao encontrado.")
+    # Impede vincular um script exclusivo de outro cliente.
+    if script.tenant_id is not None and script.tenant_id != tenant.id:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "Script pertence a outro cliente."
+        )
     binding = tenant_scripts_repo.upsert(
         db, tenant.id, body.script_id, body.parametros_default, body.ativo
     )
