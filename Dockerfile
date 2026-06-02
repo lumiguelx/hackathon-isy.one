@@ -26,4 +26,5 @@ ENV ISY_SCRIPTS_DIR=/opt/isyone/scripts
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form para expandir $PORT (Railway injeta PORT; default 8000 local).
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
