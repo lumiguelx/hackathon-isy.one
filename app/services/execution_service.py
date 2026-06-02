@@ -7,7 +7,9 @@ Cada execucao vira um evento imutavel no event store, com ou sem sucesso.
 
 import os
 import subprocess
+import threading
 import time
+from collections.abc import Iterator
 
 from sqlalchemy.orm import Session
 
@@ -85,3 +87,72 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
     if status == "falha":
         alert_service.notify_failure(tenant.slug, payload)
     return event
+
+
+def stream_script(
+    tenant: Tenant, script: Script, parametros: list[str]
+) -> Iterator[tuple[str, object]]:
+    """Roda o script emitindo a saida linha-a-linha para feedback ao vivo (SSE).
+
+    Gera ("out", linha) por linha e, ao final, ("end", payload) com o resultado
+    completo. Nao grava evento nem dispara alerta: isso fica a cargo do chamador,
+    fora do streaming (a sessao de banco da request ja pode estar fechada).
+    """
+    try:
+        path = resolve_script_path(script.caminho)
+    except ScriptPathError as exc:
+        raise ScriptNotExecutable(str(exc)) from exc
+    if not path.is_file():
+        raise ScriptNotExecutable(f"Arquivo do script nao encontrado: {script.caminho}")
+
+    argv = [str(path), *parametros]
+    started = time.perf_counter()
+    proc = subprocess.Popen(
+        argv,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,  # funde stderr no stream para feedback unico
+        text=True,
+        bufsize=1,
+        env=_build_env(tenant),
+    )
+    # Watchdog: mata o processo se passar do timeout (a leitura bloqueante de stdout
+    # nao detecta timeout sozinha).
+    timed_out = {"v": False}
+
+    def _kill() -> None:
+        timed_out["v"] = True
+        proc.kill()
+
+    watchdog = threading.Timer(settings.exec_timeout, _kill)
+    watchdog.start()
+    out_lines: list[str] = []
+    try:
+        for line in proc.stdout or []:
+            out_lines.append(line)
+            yield ("out", line.rstrip("\n"))
+        proc.wait()
+    finally:
+        watchdog.cancel()
+        if proc.stdout:
+            proc.stdout.close()
+
+    duracao_ms = int((time.perf_counter() - started) * 1000)
+    if timed_out["v"]:
+        status, exit_code = "falha", None
+        stderr = f"Tempo limite de {settings.exec_timeout}s excedido."
+    else:
+        exit_code = proc.returncode
+        status = "sucesso" if exit_code == 0 else "falha"
+        stderr = ""
+
+    payload = {
+        "script_nome": script.nome,
+        "categoria": script.categoria,
+        "parametros": " ".join(parametros),
+        "status": status,
+        "exit_code": exit_code,
+        "stdout": "".join(out_lines)[: settings.output_limit],
+        "stderr": stderr,
+        "duracao_ms": duracao_ms,
+    }
+    yield ("end", payload)

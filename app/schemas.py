@@ -96,6 +96,14 @@ class TenantOut(BaseModel):
     criado_em: datetime
 
 
+class RegistroRequest(BaseModel):
+    """Cadastro self-service publico (plano free)."""
+
+    nome: str = Field(min_length=2, max_length=120)
+    email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=180)
+    plano: str = Field(default="free", max_length=20)
+
+
 class TenantScriptBinding(BaseModel):
     script_id: int
     parametros_default: str = Field(default="", max_length=255)

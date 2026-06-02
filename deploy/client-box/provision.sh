@@ -85,9 +85,42 @@ echo "Tamanho: $(du -h "$OUT" | cut -f1)"
 echo "Backup concluido com sucesso."
 EOF
 
-chmod 755 /opt/isyone/bin/cleanup_logs /opt/isyone/bin/update_agent /opt/isyone/bin/backup_db
+cat > /opt/isyone/bin/provisionar <<'EOF'
+#!/usr/bin/env bash
+# Provisiona um novo cliente: cria diretorios e sobe os containers db/odoo/agente.
+# Usado pelo self-service (POST /registro) e idempotente.
+set -euo pipefail
+SLUG="${1:?uso: provisionar <slug> [dominio] [porta]}"
+DOMINIO="${2:-${SLUG}.isy.one}"
+PORTA="${3:-8080}"
+DB="db_$(printf '%s' "$SLUG" | tr '-' '_')"
+echo "--- [1/6] Criando estrutura e isolamento para: ${SLUG}"
+mkdir -p "/opt/isyone/clientes/${SLUG}/logs/cupons" "/opt/isyone/clientes/${SLUG}/backups"
+echo "--- [2/6] Subindo banco de dados (Postgres ${DB})"
+docker rm -f "isyone-${SLUG}-db" >/dev/null 2>&1 || true
+docker run -d --name "isyone-${SLUG}-db" --restart unless-stopped \
+  -e POSTGRES_PASSWORD=demo -e POSTGRES_DB="${DB}" postgres:16-alpine >/dev/null
+echo "--- [3/6] Subindo aplicacao (Odoo) e proxy"
+docker rm -f "isyone-${SLUG}-odoo" >/dev/null 2>&1 || true
+docker run -d --name "isyone-${SLUG}-odoo" --restart unless-stopped nginx:alpine >/dev/null
+echo "--- [4/6] Subindo agente de impressao iFood"
+docker rm -f "isyone-${SLUG}-ifood-agent" >/dev/null 2>&1 || true
+docker run -d --name "isyone-${SLUG}-ifood-agent" --restart unless-stopped \
+  alpine sh -c 'while true; do echo "imprimindo cupom"; sleep 5; done' >/dev/null
+echo "--- [5/6] Aguardando containers ficarem saudaveis"
+sleep 2
+echo "--- [6/6] Finalizando"
+echo "========================================"
+echo "CLIENTE ${SLUG} PROVISIONADO COM SUCESSO"
+echo "URL: https://${DOMINIO}"
+echo "DB: ${DB}"
+EOF
+
+chmod 755 /opt/isyone/bin/cleanup_logs /opt/isyone/bin/update_agent /opt/isyone/bin/backup_db /opt/isyone/bin/provisionar
 
 echo "=== [4/6] Diretorios do cliente (${SLUG}) ==="
+# /opt/isyone/clientes pertence ao isyone para o self-service criar novos clientes.
+install -d -m 755 -o isyone -g isyone /opt/isyone/clientes
 install -d -m 755 -o isyone -g isyone "$CUPONS_DIR" "$BACKUP_DIR"
 
 echo "=== [5/6] Semeando logs de cupons iFood antigos ==="

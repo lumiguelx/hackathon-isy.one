@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Isy.One — Crie sua conta</title>
+  <style>
+    :root { --azul: #1565c0; --verde: #2e7d32; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; color: #111; background: #f6f7f9; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px; }
+    h1 { margin: 0 0 4px; }
+    .sub { color: #666; margin-bottom: 24px; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 22px; }
+    label { display: block; font-size: 13px; color: #444; margin: 12px 0 4px; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    button { margin-top: 18px; width: 100%; padding: 12px; border: 0; background: var(--azul); color: #fff; font-size: 15px; border-radius: 6px; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: default; }
+    pre { background: #0d1117; color: #d1f1d1; padding: 14px; border-radius: 8px; white-space: pre-wrap; word-break: break-word; min-height: 60px; font-size: 13px; line-height: 1.5; margin-top: 18px; max-height: 320px; overflow:auto; }
+    .cred { margin-top: 16px; padding: 16px; border: 1px solid var(--verde); background: #f1f8f1; border-radius: 8px; display: none; }
+    .cred code { background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cdd; }
+    .muted { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Isy.One</h1>
+    <div class="sub">Crie sua conta no plano <strong>free</strong> — seu ambiente sobe automaticamente.</div>
+    <div class="card">
+      <form id="form">
+        <label for="nome">Nome do estabelecimento</label>
+        <input id="nome" required placeholder="Ex.: Tux Burger" />
+        <label for="email">E-mail</label>
+        <input id="email" type="email" required placeholder="voce@empresa.com" />
+        <label for="plano">Plano</label>
+        <select id="plano">
+          <option value="free">Free</option>
+          <option value="pro">Pro</option>
+        </select>
+        <button id="btn" type="submit">Criar conta e provisionar</button>
+      </form>
+
+      <pre id="log" style="display:none"></pre>
+
+      <div class="cred" id="cred">
+        <strong>Ambiente provisionado!</strong>
+        <div style="margin-top:8px">URL: <code id="c-url"></code></div>
+        <div style="margin-top:4px">Cliente: <code id="c-slug"></code></div>
+        <div style="margin-top:4px">Token de API: <code id="c-token"></code></div>
+        <div class="muted" style="margin-top:10px">Guarde o token: ele autentica as chamadas do seu ambiente.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nome = $("nome").value.trim();
+      const email = $("email").value.trim();
+      const plano = $("plano").value;
+      $("btn").disabled = true;
+      $("cred").style.display = "none";
+      const log = $("log");
+      log.style.display = "block";
+      log.textContent = "";
+
+      try {
+        const res = await fetch("/api/v1/registro", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nome, email, plano }),
+        });
+        if (!res.ok) {
+          const b = await res.json().catch(() => ({}));
+          log.textContent = "Erro: " + (b.detail || res.status);
+          $("btn").disabled = false;
+          return;
+        }
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let i;
+          while ((i = buf.indexOf("\n\n")) >= 0) {
+            handle(buf.slice(0, i));
+            buf = buf.slice(i + 2);
+          }
+        }
+      } catch (err) {
+        log.textContent += "\nFalha de conexao: " + err.message;
+      } finally {
+        $("btn").disabled = false;
+      }
+    });
+
+    function handle(chunk) {
+      let evento = "message", data = "";
+      for (const linha of chunk.split("\n")) {
+        if (linha.startsWith("event:")) evento = linha.slice(6).trim();
+        else if (linha.startsWith("data:")) data += linha.slice(5).trim();
+      }
+      if (!data) return;
+      const obj = JSON.parse(data);
+      const log = $("log");
+      if (evento === "tenant") {
+        log.textContent += `Criando ambiente para "${obj.nome}" (${obj.slug})...\n`;
+      } else if (evento === "log") {
+        log.textContent += obj.line + "\n";
+        log.scrollTop = log.scrollHeight;
+      } else if (evento === "done") {
+        $("c-url").textContent = obj.url;
+        $("c-slug").textContent = obj.slug;
+        $("c-token").textContent = obj.token;
+        $("cred").style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>
