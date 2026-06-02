@@ -6,16 +6,15 @@ Diferencial do pitch. Best-effort: falha de alerta nunca quebra a execucao do sc
 import httpx
 
 from app.core.config import settings
-from app.models import Execution
 
 
-def notify_failure(execution: Execution) -> None:
+def notify_failure(tenant_slug: str, payload: dict) -> None:
     if not settings.alert_webhook_url:
         return
     content = (
-        f":rotating_light: Falha na execucao do script `{execution.script_nome}`\n"
-        f"exit_code={execution.exit_code} | params={execution.parametros or '-'}\n"
-        f"stderr: {execution.stderr[:500]}"
+        f":rotating_light: Falha em `{tenant_slug}` / `{payload.get('script_nome')}`\n"
+        f"exit_code={payload.get('exit_code')} | params={payload.get('parametros') or '-'}\n"
+        f"stderr: {str(payload.get('stderr'))[:500]}"
     )
     try:
         httpx.post(settings.alert_webhook_url, json={"content": content}, timeout=5)

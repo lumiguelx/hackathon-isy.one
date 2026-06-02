@@ -1,12 +1,8 @@
-"""Execucao segura de shell scripts via subprocess.
+"""Execucao segura de scripts (tenant-scoped) gravando evento ExecutionCompleted.
 
-Pontos de seguranca (criterio de 25% da banca):
-- So executa scripts cadastrados e ativos (whitelist resolvida no banco).
-- subprocess.run com LISTA de argumentos e shell=False: parametros entram como
-  argv literais, nunca interpolados em uma string de shell -> sem command injection.
-- Caminho resolvido dentro do diretorio montado -> sem path traversal.
-- timeout encerra processos pendurados.
-Cada execucao e persistida como auditoria, com ou sem sucesso.
+Seguranca: whitelist por tenant (resolvida na rota), subprocess shell=False +
+timeout, caminho dentro do diretorio montado (anti command injection / traversal).
+Cada execucao vira um evento imutavel no event store, com ou sem sucesso.
 """
 
 import subprocess
@@ -14,10 +10,11 @@ import time
 
 from sqlalchemy.orm import Session
 
+from app.core import events as ev
 from app.core.config import settings
 from app.core.security import ScriptPathError, resolve_script_path
-from app.models import Execution, Script
-from app.repositories import executions_repo
+from app.models import Event, Script, Tenant
+from app.repositories import events_repo
 from app.services import alert_service
 
 
@@ -25,22 +22,11 @@ class ScriptNotExecutable(RuntimeError):
     """Script ativo, mas arquivo ausente ou caminho invalido."""
 
 
-def _persist(db: Session, execution: Execution) -> Execution:
-    execution.stdout = execution.stdout[: settings.output_limit]
-    execution.stderr = execution.stderr[: settings.output_limit]
-    saved = executions_repo.create(db, execution)
-    if saved.status == "falha":
-        alert_service.notify_failure(saved)
-    return saved
-
-
-def run(db: Session, script: Script, parametros: list[str]) -> Execution:
-    """Executa um script da whitelist e devolve o registro de auditoria persistido."""
+def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> Event:
     try:
         path = resolve_script_path(script.caminho)
     except ScriptPathError as exc:
         raise ScriptNotExecutable(str(exc)) from exc
-
     if not path.is_file():
         raise ScriptNotExecutable(f"Arquivo do script nao encontrado: {script.caminho}")
 
@@ -50,35 +36,30 @@ def run(db: Session, script: Script, parametros: list[str]) -> Execution:
     started = time.perf_counter()
     try:
         proc = subprocess.run(
-            argv,
-            capture_output=True,
-            text=True,
-            timeout=settings.exec_timeout,
-            check=False,
+            argv, capture_output=True, text=True,
+            timeout=settings.exec_timeout, check=False,
         )
         duracao_ms = int((time.perf_counter() - started) * 1000)
         status = "sucesso" if proc.returncode == 0 else "falha"
-        execution = Execution(
-            script_id=script.id,
-            script_nome=script.nome,
-            parametros=" ".join(parametros),
-            status=status,
-            exit_code=proc.returncode,
-            stdout=proc.stdout,
-            stderr=proc.stderr,
-            duracao_ms=duracao_ms,
-        )
+        stdout, stderr, exit_code = proc.stdout, proc.stderr, proc.returncode
     except subprocess.TimeoutExpired:
         duracao_ms = int((time.perf_counter() - started) * 1000)
-        execution = Execution(
-            script_id=script.id,
-            script_nome=script.nome,
-            parametros=" ".join(parametros),
-            status="falha",
-            exit_code=None,
-            stdout="",
-            stderr=f"Tempo limite de {settings.exec_timeout}s excedido.",
-            duracao_ms=duracao_ms,
-        )
+        status, exit_code = "falha", None
+        stdout, stderr = "", f"Tempo limite de {settings.exec_timeout}s excedido."
 
-    return _persist(db, execution)
+    payload = {
+        "script_nome": script.nome,
+        "categoria": script.categoria,
+        "parametros": " ".join(parametros),
+        "status": status,
+        "exit_code": exit_code,
+        "stdout": stdout[: settings.output_limit],
+        "stderr": stderr[: settings.output_limit],
+        "duracao_ms": duracao_ms,
+    }
+    event = events_repo.append(
+        db, ev.EXECUTION_COMPLETED, payload, tenant_id=tenant.id, script_id=script.id
+    )
+    if status == "falha":
+        alert_service.notify_failure(tenant.slug, payload)
+    return event
