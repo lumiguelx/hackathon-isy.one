@@ -27,10 +27,16 @@
     <span class="muted">Token</span>
     <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" />
     <button onclick="loadDashboard()">Atualizar</button>
+    <a href="/registro" target="_blank" style="padding:6px 10px; border:1px solid #ccc; background:#fff; border-radius:4px; text-decoration:none; color:#111">Criar conta</a>
     <button id="btn-grafana" title="Saude do Docker da frota (OTel + Prometheus + Grafana)" style="margin-left:auto; display:none">Saude da frota (Grafana)</button>
   </header>
   <main>
     <div class="grid" id="grid"></div>
+    <section id="obs" style="display:none">
+      <h3 style="margin-top:0">Saude da frota — Docker (tempo real)</h3>
+      <div class="muted" style="margin-bottom:8px">OTel + Prometheus + Grafana. Rode <strong>update_agent</strong> ou <strong>cleanup_logs</strong> num cliente e veja os paineis reagirem.</div>
+      <iframe id="grafana-frame" title="Grafana" style="width:100%; height:640px; border:1px solid #ddd; border-radius:6px"></iframe>
+    </section>
     <section id="detalhe" style="display:none">
       <h3 id="d-nome"></h3>
       <div id="d-scripts"></div>
@@ -105,6 +111,8 @@
           const btn = $("btn-grafana");
           btn.onclick = () => window.open(data.grafana_url, "_blank");
           btn.style.display = "";
+          $("grafana-frame").src = `${data.grafana_url}/d/isyone-fleet?kiosk&refresh=10s&theme=light`;
+          $("obs").style.display = "";
         }
       } catch (_) { /* sem config = botao continua oculto */ }
     }

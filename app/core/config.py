@@ -36,5 +36,10 @@ class Settings(BaseSettings):
     # A chave privada vem de ISY_SSH_KEY (secret), lida pelos scripts via env.
     ssh_user: str = "isyone"
 
+    # Servidor onde o self-service (POST /registro) provisiona novos clientes.
+    # Vazio = provisionamento roda local (saida simulada).
+    self_service_ssh_host: str = ""
+    self_service_ssh_port: int = 22
+
 
 settings = Settings()

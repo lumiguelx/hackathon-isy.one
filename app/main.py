@@ -4,12 +4,13 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.db import SessionLocal, init_db
 from app.core.seed import seed_demo
-from app.routes import admin, health, tenants
+from app.routes import admin, health, registro, tenants
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -31,8 +32,16 @@ app = FastAPI(
 )
 
 app.include_router(health.router)
+app.include_router(registro.router)
 app.include_router(admin.router)
 app.include_router(tenants.router)
+
+
+# Pagina publica de cadastro self-service.
+@app.get("/registro", include_in_schema=False)
+def registro_page() -> FileResponse:
+    return FileResponse(str(_STATIC_DIR / "registro.html"))
+
 
 # UI de demonstracao (pagina estatica servida pelo proprio FastAPI) em /ui.
 app.mount("/ui", StaticFiles(directory=str(_STATIC_DIR), html=True), name="ui")
