@@ -14,8 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Codigo da aplicacao.
 COPY app ./app
 
-# Diretorio onde os scripts do host serao montados via volume.
-RUN mkdir -p /opt/isyone/scripts
+# Scripts embarcados na imagem (em deploys sem volume, ex.: Railway). No
+# docker-compose local, o volume ./scripts:ro sobrepoe este diretorio.
+COPY scripts /opt/isyone/scripts
 ENV ISY_SCRIPTS_DIR=/opt/isyone/scripts
 
 EXPOSE 8000

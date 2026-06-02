@@ -58,6 +58,16 @@ docker compose up --build
 - `ISY_SEED_DEMO=true` pre-cadastra os scripts de exemplo (`provisionar`, `update_agent`, `cleanup_logs`, `docker_status`).
 - Testes: `pytest` (cobrem token/401, anti command injection, whitelist e auditoria).
 
+### Deploy (Railway)
+
+- Build pelo `Dockerfile` (config em `railway.json`); os scripts vao embarcados na imagem.
+- Variaveis: `ISY_TOKEN`, `ISY_DATABASE_URL` (Postgres do projeto, ex.:
+  `postgresql+psycopg://...` a partir de `${{Postgres.DATABASE_URL}}`),
+  `ISY_SEED_DEMO=true`, `ISY_SCRIPTS_DIR=/opt/isyone/scripts`.
+- Sobe seedado com os 5 clientes de demonstracao (status verde/amarelo/vermelho).
+- Comandos: `railway login` -> `railway link` -> `railway up`.
+- Plano B (video): `docker compose up --build` local — nunca depender de rede ao vivo.
+
 ## Fluxo de trabalho
 
 1. **Spec primeiro** — copie `docs/specs/TEMPLATE.md` para `docs/specs/AAAA-MM-DD-<nome>.md` e preencha.
