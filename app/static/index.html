@@ -168,7 +168,7 @@
         <button class="btn" onclick="openScript()">+ Novo script</button>
       </div>
       <table>
-        <thead><tr><th>Nome</th><th>Arquivo</th><th>Parâmetros</th><th>Descrição</th><th>Categoria</th><th>Ativo</th><th></th></tr></thead>
+        <thead><tr><th>Nome</th><th>Arquivo/Template</th><th>Parâmetros</th><th>Descrição</th><th>Categoria</th><th>Dono</th><th>Ativo</th><th></th></tr></thead>
         <tbody id="scripts-body"></tbody>
       </table>
     </section>
@@ -295,20 +295,31 @@
       $("drawer").classList.add("show");
       try {
         const { data } = await api(`/api/v1/tenants/${slug}/scripts`);
-        $("dr-scripts").innerHTML = data.map(s => `
+        $("dr-scripts").innerHTML = data.map(s => {
+          const ps = s.parametros_schema || [];
+          const inputs = ps.length
+            ? ps.map(p => `<input id="p-${s.script_id}-${p.nome}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:140px" />`).join("")
+            : `<input id="p-${s.script_id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
+          return `
           <div class="exec-row">
             <span class="nm">${esc(s.nome)}</span>
-            <input id="p-${s.script_id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />
-            <button class="btn sm" onclick="runScript(${s.script_id})">executar</button>
-          </div>`).join("") || `<div class="muted">Sem scripts vinculados.</div>`;
+            ${inputs}
+            <button class="btn sm" onclick="runScript(${s.script_id}, ${ps.length})">executar</button>
+          </div>`;
+        }).join("") || `<div class="muted">Sem scripts vinculados.</div>`;
       } catch (e) { $("dr-scripts").innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
       loadDrawerLogs();
     }
     function closeDrawer() { $("drawer").classList.remove("show"); state.current = null; }
 
-    async function runScript(sid) {
-      const raw = $(`p-${sid}`).value.trim();
-      const parametros = raw ? raw.split(/\s+/) : [];
+    async function runScript(sid, nparams) {
+      let parametros;
+      if (nparams) {
+        parametros = Array.from(document.querySelectorAll(`[id^="p-${sid}-"]`)).map(c => c.value.trim());
+      } else {
+        const raw = ($(`p-${sid}`)?.value || "").trim();
+        parametros = raw ? raw.split(/\s+/) : [];
+      }
       $("dr-out").textContent = "Executando...";
       try {
         const { data } = await api(`/api/v1/tenants/${state.current}/scripts/${sid}/run`, { method: "POST", body: JSON.stringify({ parametros }) });
@@ -386,26 +397,41 @@
 
     /* ---- SCRIPTS CRUD ---- */
     async function loadScripts() {
+      if (!state.tenants.length || !state.tenants.some(t => t.id != null)) {
+        try { const { data } = await api("/api/v1/admin/tenants"); state.tenants = data; } catch (_) {}
+      }
       try {
         const { data } = await api("/api/v1/admin/scripts"); state.scripts = data; setConn(true);
         $("scripts-body").innerHTML = data.map(s => `
           <tr>
             <td><strong>${esc(s.nome)}</strong></td>
-            <td class="mono" style="font-size:12px">${esc(s.caminho)}</td>
-            <td class="muted">${esc(s.parametros||'—')}</td>
+            <td class="mono" style="font-size:12px">${s.tipo === "template" ? esc(s.template || "") : esc(s.caminho)}</td>
+            <td class="muted">${esc((s.parametros_schema||[]).map(p=>p.nome).join(", ") || s.parametros || '—')}</td>
             <td class="muted">${esc(s.descricao||'—')}</td>
             <td><span class="badge neutral">${esc(s.categoria)}</span></td>
+            <td class="muted">${s.tenant_id ? esc((state.tenants.find(t=>t.id===s.tenant_id)||{}).nome || ("#"+s.tenant_id)) : "Global"}</td>
             <td><label class="switch"><input type="checkbox" ${s.ativo?'checked':''} onchange="toggleScript(${s.id}, this.checked)"><span class="slider"></span></label></td>
             <td><button class="btn ghost sm" onclick='openScript(${s.id})'>Editar</button></td>
-          </tr>`).join("") || `<tr><td colspan="7" class="empty">Catálogo vazio.</td></tr>`;
-      } catch (e) { setConn(false); $("scripts-body").innerHTML = `<tr><td colspan="7" class="empty">${esc(e.message)}</td></tr>`; }
+          </tr>`).join("") || `<tr><td colspan="8" class="empty">Catálogo vazio.</td></tr>`;
+      } catch (e) { setConn(false); $("scripts-body").innerHTML = `<tr><td colspan="8" class="empty">${esc(e.message)}</td></tr>`; }
     }
     function openScript(id) {
       const s = id ? state.scripts.find(x => x.id === id) : null;
+      const tenantsOpts = ['<option value="">Global</option>']
+        .concat(state.tenants.map(t => `<option value="${t.id}" ${s?.tenant_id===t.id?'selected':''}>${esc(t.nome)}</option>`))
+        .join("");
       modal(s ? "Editar script" : "Novo script", `
-        <div class="field"><label>Nome *</label><input id="sc-nome" value="${esc(s?.nome||'')}" placeholder="ex.: cleanup_logs" /></div>
-        <div class="field"><label>Arquivo (.sh no volume) *</label><input id="sc-caminho" value="${esc(s?.caminho||'')}" placeholder="cleanup_logs.sh" class="mono" /></div>
-        <div class="field"><label>Parâmetros de envio</label><input id="sc-param" value="${esc(s?.parametros||'')}" placeholder="ex.: dias_retencao" /></div>
+        <div class="field"><label>Nome *</label><input id="sc-nome" value="${esc(s?.nome||'')}" placeholder="ex.: reinicia-agente" /></div>
+        <div class="field"><label>Tipo</label>
+          <select id="sc-tipo" onchange="toggleTipoCampos()">
+            <option value="arquivo" ${s?.tipo!=='template'?'selected':''}>Arquivo (.sh no volume)</option>
+            <option value="template" ${s?.tipo==='template'?'selected':''}>Template</option>
+          </select></div>
+        <div class="field" id="campo-arquivo"><label>Arquivo (.sh) *</label><input id="sc-caminho" value="${esc(s?.caminho||'')}" placeholder="cleanup_logs.sh" class="mono" /></div>
+        <div class="field" id="campo-template"><label>Template *</label>
+          <textarea id="sc-template" rows="3" class="mono" placeholder="docker restart {{container:agent}}">${esc(s?.template||'')}</textarea>
+          <div class="muted" style="font-size:11px">Placeholders: {{slug}} {{container:db|odoo|agent}} {{db}} {{logdir}} {{param:nome:int|slug}}</div></div>
+        <div class="field"><label>Dono</label><select id="sc-dono" ${s?'disabled':''}>${tenantsOpts}</select></div>
         <div class="field"><label>Descrição curta</label><input id="sc-desc" value="${esc(s?.descricao||'')}" /></div>
         <div class="field"><label>Categoria</label>
           <select id="sc-cat">${["cleanup","backup","update","status","provision","other"].map(c=>`<option ${s?.categoria===c?'selected':''}>${c}</option>`).join("")}</select></div>
@@ -415,14 +441,26 @@
         { label: "Cancelar", cls: "ghost", act: closeModal },
         { label: s ? "Salvar" : "Cadastrar", cls: "", act: () => saveScript(id) },
       ]);
+      toggleTipoCampos();
+    }
+    function toggleTipoCampos() {
+      const t = $("sc-tipo").value;
+      $("campo-arquivo").style.display = t === "arquivo" ? "" : "none";
+      $("campo-template").style.display = t === "template" ? "" : "none";
     }
     async function saveScript(id) {
+      const tipo = $("sc-tipo").value;
       const body = {
-        nome: $("sc-nome").value.trim(), caminho: $("sc-caminho").value.trim(),
-        parametros: $("sc-param").value.trim(), descricao: $("sc-desc").value.trim(),
+        nome: $("sc-nome").value.trim(), tipo,
+        caminho: tipo === "arquivo" ? $("sc-caminho").value.trim() : "",
+        template: tipo === "template" ? $("sc-template").value.trim() : null,
+        descricao: $("sc-desc").value.trim(),
         categoria: $("sc-cat").value, ativo: $("sc-ativo").checked,
       };
-      if (!body.nome || !body.caminho) { toast("Nome e arquivo são obrigatórios", "err"); return; }
+      if (!id) { const dono = $("sc-dono").value; if (dono) body.tenant_id = parseInt(dono, 10); }
+      if (!body.nome || (tipo === "arquivo" && !body.caminho) || (tipo === "template" && !body.template)) {
+        toast("Preencha nome e arquivo/template", "err"); return;
+      }
       try {
         if (id) await api(`/api/v1/admin/scripts/${id}`, { method: "PUT", body: JSON.stringify(body) });
         else await api("/api/v1/admin/scripts", { method: "POST", body: JSON.stringify(body) });
