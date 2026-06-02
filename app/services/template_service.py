@@ -12,8 +12,8 @@ import re
 # Conjunto permitido em segmentos literais e na string final renderizada. Exclui
 # todos os metacaracteres de shell (; & | ` $ ( ) { } < > \\ " ' * ? [ ]).
 _SAFE_CHARS = r"A-Za-z0-9 _.,/=:+-"
-_LITERAL_RE = re.compile(rf"^[{_SAFE_CHARS}]*$")
-_RENDERED_RE = re.compile(rf"^[{_SAFE_CHARS}]+$")
+_LITERAL_RE = re.compile(rf"^[{_SAFE_CHARS}]*\Z")
+_RENDERED_RE = re.compile(rf"^[{_SAFE_CHARS}]+\Z")
 _PLACEHOLDER_RE = re.compile(r"\{\{\s*([^{}]*?)\s*\}\}")
 _PARAM_RE = re.compile(r"^param:([a-z][a-z0-9_]*):(int|slug)$")
 

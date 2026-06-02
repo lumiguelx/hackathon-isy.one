@@ -33,3 +33,10 @@ def test_validate_rejeita_metacaractere_no_texto_fixo():
 def test_validate_rejeita_vazio():
     with pytest.raises(ts.TemplateError):
         ts.validate("   ")
+
+
+def test_validate_rejeita_quebra_de_linha():
+    with pytest.raises(ts.TemplateError):
+        ts.validate("echo {{slug}}\nrm -rf /")
+    with pytest.raises(ts.TemplateError):
+        ts.validate("echo {{slug}}\n")
