@@ -40,3 +40,43 @@ def test_validate_rejeita_quebra_de_linha():
         ts.validate("echo {{slug}}\nrm -rf /")
     with pytest.raises(ts.TemplateError):
         ts.validate("echo {{slug}}\n")
+
+
+from types import SimpleNamespace
+
+
+def _tenant(slug="tux-burger"):
+    return SimpleNamespace(slug=slug, ssh_host=None)
+
+
+def test_extract_params_dedup_por_nome_em_ordem():
+    params = ts.extract_params("a {{param:dias:int}} {{slug}} {{param:dias:int}}")
+    assert params == [{"nome": "dias", "tipo": "int"}]
+
+
+def test_extract_params_tipo_conflitante():
+    with pytest.raises(ts.TemplateError):
+        ts.extract_params("{{param:x:int}} {{param:x:slug}}")
+
+
+def test_render_resolve_container_do_tenant():
+    out = ts.render("docker restart {{container:agent}}", _tenant(), [])
+    assert out == "docker restart isyone-tux-burger-ifood-agent"
+
+
+def test_render_db_e_logdir():
+    assert ts.render("{{db}}", _tenant("tux-burger"), []) == "db_tux_burger"
+    assert ts.render("{{logdir}}", _tenant("tux-burger"), []) == (
+        "/opt/isyone/clientes/tux-burger/logs/cupons"
+    )
+
+
+def test_render_valida_param_int():
+    assert ts.render("limpa {{param:dias:int}}", _tenant(), ["30"]) == "limpa 30"
+    with pytest.raises(ts.TemplateError):
+        ts.render("limpa {{param:dias:int}}", _tenant(), ["abc"])
+
+
+def test_render_faltando_valor():
+    with pytest.raises(ts.TemplateError):
+        ts.render("limpa {{param:dias:int}}", _tenant(), [])

@@ -56,3 +56,66 @@ def validate(template: str | None) -> None:
         pos = m.end()
     if not _LITERAL_RE.match(template[pos:]):
         raise TemplateError("Texto fixo contem caractere proibido.")
+
+
+def extract_params(template: str) -> list[dict]:
+    """Params {nome, tipo} deduplicados por nome, na ordem de primeira aparicao."""
+    params: list[dict] = []
+    vistos: dict[str, str] = {}
+    for m in _PLACEHOLDER_RE.finditer(template):
+        pm = _PARAM_RE.match(m.group(1))
+        if not pm:
+            continue
+        nome, tipo = pm.group(1), pm.group(2)
+        if nome in vistos:
+            if vistos[nome] != tipo:
+                raise TemplateError(f"Parametro '{nome}' com tipos divergentes.")
+            continue
+        vistos[nome] = tipo
+        params.append({"nome": nome, "tipo": tipo})
+    return params
+
+
+def _db_name(slug: str) -> str:
+    return "db_" + slug.replace("-", "_")
+
+
+def render(template: str, tenant, valores: list[str]) -> str:
+    """Renderiza o template para uma string segura, resolvendo placeholders.
+
+    Tenant (slug/container/db/logdir) vem do tenant vinculado; params vem de
+    `valores` (posicional, na ordem declarada). Levanta TemplateError em qualquer
+    inconsistencia.
+    """
+    validate(template)
+    params = extract_params(template)
+    if len(valores) < len(params):
+        raise TemplateError(
+            f"Faltam parametros: esperado {len(params)}, recebido {len(valores)}."
+        )
+    valor_por_nome: dict[str, str] = {}
+    for i, p in enumerate(params):
+        valor = valores[i]
+        if not _PARAM_VALIDADORES[p["tipo"]].match(valor):
+            raise TemplateError(
+                f"Parametro '{p['nome']}' invalido para tipo {p['tipo']}: '{valor}'."
+            )
+        valor_por_nome[p["nome"]] = valor
+
+    def _sub(m: "re.Match") -> str:
+        inner = m.group(1)
+        if inner == "slug":
+            return tenant.slug
+        if inner == "db":
+            return _db_name(tenant.slug)
+        if inner == "logdir":
+            return f"/opt/isyone/clientes/{tenant.slug}/logs/cupons"
+        if inner.startswith("container:"):
+            role = inner.split(":", 1)[1]
+            return f"isyone-{tenant.slug}-{_CONTAINER_ROLES[role]}"
+        return valor_por_nome[_PARAM_RE.match(inner).group(1)]
+
+    rendered = _PLACEHOLDER_RE.sub(_sub, template).strip()
+    if not _RENDERED_RE.match(rendered):
+        raise TemplateError("Comando renderizado contem caractere inesperado.")
+    return rendered
