@@ -1,9 +1,10 @@
 """Acesso a tabela tenants."""
 
+from sqlalchemy import delete as sa_delete
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Tenant
+from app.models import Event, Tenant, TenantScript
 from app.schemas import TenantCreate, TenantUpdate
 
 
@@ -41,5 +42,9 @@ def set_token(db: Session, tenant: Tenant, token: str) -> None:
 
 
 def delete(db: Session, tenant: Tenant) -> None:
+    # Remove os registros dependentes (eventos de auditoria e bindings) antes do
+    # tenant, ja que as FKs nao tem ON DELETE CASCADE.
+    db.execute(sa_delete(Event).where(Event.tenant_id == tenant.id))
+    db.execute(sa_delete(TenantScript).where(TenantScript.tenant_id == tenant.id))
     db.delete(tenant)
     db.commit()
