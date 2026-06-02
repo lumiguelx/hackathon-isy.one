@@ -89,9 +89,9 @@ def render(template: str, tenant, valores: list[str]) -> str:
     """
     validate(template)
     params = extract_params(template)
-    if len(valores) < len(params):
+    if len(valores) != len(params):
         raise TemplateError(
-            f"Faltam parametros: esperado {len(params)}, recebido {len(valores)}."
+            f"Numero de parametros invalido: esperado {len(params)}, recebido {len(valores)}."
         )
     valor_por_nome: dict[str, str] = {}
     for i, p in enumerate(params):

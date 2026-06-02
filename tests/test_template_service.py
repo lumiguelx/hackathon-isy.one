@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from app.services import template_service as ts
@@ -42,9 +44,6 @@ def test_validate_rejeita_quebra_de_linha():
         ts.validate("echo {{slug}}\n")
 
 
-from types import SimpleNamespace
-
-
 def _tenant(slug="tux-burger"):
     return SimpleNamespace(slug=slug, ssh_host=None)
 
@@ -80,3 +79,8 @@ def test_render_valida_param_int():
 def test_render_faltando_valor():
     with pytest.raises(ts.TemplateError):
         ts.render("limpa {{param:dias:int}}", _tenant(), [])
+
+
+def test_render_valores_em_excesso():
+    with pytest.raises(ts.TemplateError):
+        ts.render("limpa {{param:dias:int}}", _tenant(), ["30", "sobra"])
