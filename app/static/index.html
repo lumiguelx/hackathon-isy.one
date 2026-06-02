@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Isy.One — Manutencao</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #111; background: #f6f7f9; }
+    header { padding: 12px 20px; background: #fff; border-bottom: 1px solid #ddd; display: flex; gap: 10px; align-items: center; }
+    header input { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 280px; }
+    button { padding: 6px 10px; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; }
+    main { padding: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; cursor: pointer; }
+    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    .verde { background: #2e7d32; } .amarelo { background: #f9a825; } .vermelho { background: #c62828; }
+    .muted { color: #666; font-size: 12px; }
+    pre { background: #f0f0f0; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+    .row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+    .row input { flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    section { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Isy.One — Manutencao</strong>
+    <span class="muted">Token</span>
+    <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" />
+    <button onclick="loadDashboard()">Atualizar</button>
+  </header>
+  <main>
+    <div class="grid" id="grid"></div>
+    <section id="detalhe" style="display:none">
+      <h3 id="d-nome"></h3>
+      <div id="d-scripts"></div>
+      <h4>Saida</h4>
+      <pre id="d-out">-</pre>
+      <h4>Historico</h4>
+      <div id="d-logs"></div>
+    </section>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const token = () => $("token").value.trim();
+    const headers = () => ({ "Content-Type": "application/json", "X-Isy-Token": token() });
+    let slugAtual = null;
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, { headers: headers(), ...opts });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.detail || `HTTP ${res.status}`);
+      return body;
+    }
+
+    async function loadDashboard() {
+      try {
+        const { data } = await api("/api/v1/admin/tenants/health");
+        $("grid").innerHTML = data.map((t) => `
+          <div class="card" onclick="abrir('${t.slug}')">
+            <div><span class="dot ${t.status_geral}"></span><strong>${t.nome}</strong></div>
+            <div class="muted">ult. manut.: ${t.ultima_manutencao ? t.ultima_manutencao.script_nome + " (" + t.ultima_manutencao.status + ")" : "nenhuma"}</div>
+            <div class="muted">backup: ${t.ultimo_backup ? "ok" : "nunca"}</div>
+          </div>`).join("");
+      } catch (e) { $("grid").innerHTML = `<div>${e.message}</div>`; }
+    }
+
+    async function abrir(slug) {
+      slugAtual = slug;
+      $("detalhe").style.display = "block";
+      $("d-nome").textContent = slug;
+      $("d-out").textContent = "-";
+      const { data } = await api(`/api/v1/tenants/${slug}/scripts`);
+      $("d-scripts").innerHTML = data.map((s) => `
+        <div class="row">
+          <strong>${s.nome}</strong>
+          <input id="p-${s.script_id}" placeholder="${s.parametros_default || "sem parametros"}" />
+          <button onclick="run(${s.script_id})">executar</button>
+        </div>`).join("");
+      loadLogs();
+    }
+
+    async function run(sid) {
+      const raw = $(`p-${sid}`).value.trim();
+      const parametros = raw ? raw.split(/\s+/) : [];
+      $("d-out").textContent = "Executando...";
+      try {
+        const { data } = await api(`/api/v1/tenants/${slugAtual}/scripts/${sid}/run`, {
+          method: "POST", body: JSON.stringify({ parametros }) });
+        $("d-out").textContent = `# ${data.status} (exit ${data.exit_code})\n\n` + (data.stdout || "") + (data.stderr ? "\n[stderr]\n" + data.stderr : "");
+        loadLogs(); loadDashboard();
+      } catch (e) { $("d-out").textContent = e.message; }
+    }
+
+    async function loadLogs() {
+      const { data } = await api(`/api/v1/tenants/${slugAtual}/logs`);
+      $("d-logs").innerHTML = data.map((l) => `<div class="muted">${l.ocorrido_em} — ${l.script_nome || l.tipo} ${l.status || ""}</div>`).join("") || "<div class='muted'>sem registros</div>";
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

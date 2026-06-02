@@ -1,0 +1,19 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # ISY_TOKEN omitido: usa o token-demo padrao de config.py (documentado no README).
+      # Em deploy real, defina ISY_TOKEN no ambiente.
+      ISY_DATABASE_URL: "sqlite:////data/isyone.db"
+      ISY_SCRIPTS_DIR: "/opt/isyone/scripts"
+      ISY_SEED_DEMO: "true"
+    volumes:
+      # Scripts do host lidos em modo somente-leitura.
+      - ./scripts:/opt/isyone/scripts:ro
+      # Banco SQLite persistido fora do container.
+      - isyone-data:/data
+
+volumes:
+  isyone-data:
