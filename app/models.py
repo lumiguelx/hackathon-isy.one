@@ -2,7 +2,15 @@
 
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -21,6 +29,8 @@ class Script(Base):
     caminho: Mapped[str] = mapped_column(String(255))
     parametros: Mapped[str] = mapped_column(String(255), default="")
     descricao: Mapped[str] = mapped_column(String(255), default="")
+    categoria: Mapped[str] = mapped_column(String(20), default="other")
+    tenant_id: Mapped[int | None] = mapped_column(ForeignKey("tenants.id"), nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
@@ -48,6 +58,17 @@ class Event(Base):
     script_id: Mapped[int | None] = mapped_column(ForeignKey("scripts.id"), nullable=True)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     ocorrido_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class TenantScript(Base):
+    __tablename__ = "tenant_scripts"
+    __table_args__ = (UniqueConstraint("tenant_id", "script_id", name="uq_tenant_script"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"))
+    script_id: Mapped[int] = mapped_column(ForeignKey("scripts.id"))
+    parametros_default: Mapped[str] = mapped_column(String(255), default="")
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class Config(Base):

@@ -15,6 +15,11 @@ def list_active(db: Session) -> list[Script]:
     return list(db.scalars(select(Script).where(Script.ativo.is_(True)).order_by(Script.id)))
 
 
+def list_global(db: Session) -> list[Script]:
+    stmt = select(Script).where(Script.tenant_id.is_(None)).order_by(Script.id)
+    return list(db.scalars(stmt))
+
+
 def get(db: Session, script_id: int) -> Script | None:
     return db.get(Script, script_id)
 

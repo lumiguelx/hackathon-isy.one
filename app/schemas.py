@@ -10,6 +10,7 @@ class ScriptCreate(BaseModel):
     caminho: str = Field(min_length=1, max_length=255)
     parametros: str = Field(default="", max_length=255)
     descricao: str = Field(default="", max_length=255)
+    categoria: str = "other"
     ativo: bool = True
 
 
@@ -18,6 +19,7 @@ class ScriptUpdate(BaseModel):
     caminho: str | None = Field(default=None, max_length=255)
     parametros: str | None = Field(default=None, max_length=255)
     descricao: str | None = Field(default=None, max_length=255)
+    categoria: str | None = None
     ativo: bool | None = None
 
 
@@ -29,6 +31,7 @@ class ScriptOut(BaseModel):
     caminho: str
     parametros: str
     descricao: str
+    categoria: str
     ativo: bool
     criado_em: datetime
 
@@ -85,3 +88,19 @@ class TenantOut(BaseModel):
     db_name: str
     ativo: bool
     criado_em: datetime
+
+
+class TenantScriptBinding(BaseModel):
+    script_id: int
+    parametros_default: str = Field(default="", max_length=255)
+    ativo: bool = True
+
+
+class TenantScriptOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tenant_id: int
+    script_id: int
+    parametros_default: str
+    ativo: bool
