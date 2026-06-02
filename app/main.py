@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.db import SessionLocal, init_db
 from app.core.seed import seed_demo
-from app.routes import admin, health, logs, scripts
+from app.routes import admin, health, tenants
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -31,9 +31,8 @@ app = FastAPI(
 )
 
 app.include_router(health.router)
-app.include_router(scripts.router)
 app.include_router(admin.router)
-app.include_router(logs.router)
+app.include_router(tenants.router)
 
 # UI de demonstracao (pagina estatica servida pelo proprio FastAPI) em /ui.
 app.mount("/ui", StaticFiles(directory=str(_STATIC_DIR), html=True), name="ui")
