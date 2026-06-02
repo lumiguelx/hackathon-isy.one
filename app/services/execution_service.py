@@ -25,6 +25,19 @@ class ScriptNotExecutable(RuntimeError):
     """Script ativo, mas arquivo ausente ou caminho invalido."""
 
 
+def _effective_params(tenant: Tenant, script: Script, parametros: list[str]) -> list[str]:
+    """Parametros efetivos da execucao, fixando o alvo de provisao no proprio tenant.
+
+    provisionar.sh recebe <slug> <dominio> <porta> por posicao. Aceitar esses valores
+    do cliente permitiria provisionar/recriar a stack de OUTRO tenant (os containers e o
+    banco sao recriados do zero). Para a categoria 'provision' o alvo e sempre o proprio
+    tenant; quaisquer parametros recebidos sao ignorados.
+    """
+    if script.categoria == "provision":
+        return [tenant.slug, tenant.dominio, str(tenant.porta)]
+    return parametros
+
+
 def _build_env(tenant: Tenant) -> dict:
     """Env do subprocess com o slug e o endpoint SSH do tenant, quando configurado.
 
@@ -52,6 +65,7 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
 
     # shell=False (default): cada item da lista e um argv isolado, sem interpretacao
     # de metacaracteres de shell. Esta e a barreira contra command injection.
+    parametros = _effective_params(tenant, script, parametros)
     argv = [str(path), *parametros]
     started = time.perf_counter()
     try:
@@ -128,6 +142,7 @@ def stream_script(
     if not path.is_file():
         raise ScriptNotExecutable(f"Arquivo do script nao encontrado: {script.caminho}")
 
+    parametros = _effective_params(tenant, script, parametros)
     argv = [str(path), *parametros]
     started = time.perf_counter()
     proc = subprocess.Popen(
