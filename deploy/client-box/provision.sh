@@ -116,7 +116,18 @@ echo "URL: https://${DOMINIO}"
 echo "DB: ${DB}"
 EOF
 
-chmod 755 /opt/isyone/bin/cleanup_logs /opt/isyone/bin/update_agent /opt/isyone/bin/backup_db /opt/isyone/bin/provisionar
+cat > /opt/isyone/bin/deprovisionar <<'EOF'
+#!/usr/bin/env bash
+# Desprovisiona um cliente: remove containers e diretorio.
+set -euo pipefail
+SLUG="${1:?uso: deprovisionar <slug>}"
+echo "Removendo containers do cliente ${SLUG}..."
+docker rm -f "isyone-${SLUG}-db" "isyone-${SLUG}-odoo" "isyone-${SLUG}-ifood-agent" >/dev/null 2>&1 || true
+rm -rf "/opt/isyone/clientes/${SLUG}"
+echo "Cliente ${SLUG} desprovisionado."
+EOF
+
+chmod 755 /opt/isyone/bin/cleanup_logs /opt/isyone/bin/update_agent /opt/isyone/bin/backup_db /opt/isyone/bin/provisionar /opt/isyone/bin/deprovisionar
 
 echo "=== [4/6] Diretorios do cliente (${SLUG}) ==="
 # /opt/isyone/clientes pertence ao isyone para o self-service criar novos clientes.

@@ -89,6 +89,29 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
     return event
 
 
+def deprovision_remote(tenant: Tenant) -> str:
+    """Best-effort: remove os containers do cliente no servidor (deprovisionar.sh).
+
+    Nao levanta excecao se falhar — a remocao do tenant no banco prossegue mesmo
+    que o servidor esteja inacessivel. Retorna a saida para log/debug.
+    """
+    try:
+        path = resolve_script_path("deprovisionar.sh")
+        if not path.is_file():
+            return ""
+        proc = subprocess.run(
+            [str(path), tenant.slug],
+            capture_output=True,
+            text=True,
+            timeout=settings.exec_timeout,
+            check=False,
+            env=_build_env(tenant),
+        )
+        return proc.stdout + proc.stderr
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
 def stream_script(
     tenant: Tenant, script: Script, parametros: list[str]
 ) -> Iterator[tuple[str, object]]:

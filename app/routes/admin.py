@@ -25,7 +25,7 @@ from app.schemas import (
     TenantUpdate,
     TokenUpdate,
 )
-from app.services import health_service, script_service
+from app.services import execution_service, health_service, script_service
 
 router = APIRouter(
     prefix="/api/v1/admin", tags=["Administracao"], dependencies=[Depends(verify_admin)]
@@ -65,8 +65,11 @@ def delete_tenant(slug: str, db: Session = Depends(get_db)) -> dict:
     tenant = tenants_repo.get_by_slug(db, slug)
     if tenant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
+    # Desprovisiona o servidor (remove containers) antes de apagar o cadastro.
+    if tenant.ssh_host:
+        execution_service.deprovision_remote(tenant)
     tenants_repo.delete(db, tenant)
-    return ok(message="Cliente removido.")
+    return ok(message="Cliente desprovisionado e removido.")
 
 
 @router.get("/scripts")
