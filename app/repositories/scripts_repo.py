@@ -12,7 +12,9 @@ def list_all(db: Session) -> list[Script]:
 
 
 def list_active(db: Session) -> list[Script]:
-    return list(db.scalars(select(Script).where(Script.ativo.is_(True)).order_by(Script.id)))
+    return list(
+        db.scalars(select(Script).where(Script.ativo.is_(True)).order_by(Script.id))
+    )
 
 
 def list_global(db: Session) -> list[Script]:

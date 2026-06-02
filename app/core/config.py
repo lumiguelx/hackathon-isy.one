@@ -4,7 +4,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ISY_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="ISY_", env_file=".env", extra="ignore"
+    )
 
     # Token inicial; semeado no banco no primeiro boot. Depois e rotacionavel via API.
     token: str = "544c5787-613a-4ac2-8e61-9e6486f8d74a"

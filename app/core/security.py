@@ -24,7 +24,9 @@ def verify_admin(
 ) -> None:
     admin = config_repo.get_token(db)
     if not x_isy_token or not secrets.compare_digest(x_isy_token, admin):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token admin invalido ou ausente.")
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED, "Token admin invalido ou ausente."
+        )
 
 
 def verify_tenant(

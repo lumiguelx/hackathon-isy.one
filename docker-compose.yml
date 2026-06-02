@@ -4,7 +4,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      ISY_TOKEN: "544c5787-613a-4ac2-8e61-9e6486f8d74a"
+      # ISY_TOKEN omitido: usa o token-demo padrao de config.py (documentado no README).
+      # Em deploy real, defina ISY_TOKEN no ambiente.
       ISY_DATABASE_URL: "sqlite:////data/isyone.db"
       ISY_SCRIPTS_DIR: "/opt/isyone/scripts"
       ISY_SEED_DEMO: "true"

@@ -27,7 +27,9 @@ def upsert(
     return binding
 
 
-def list_active_scripts(db: Session, tenant_id: int) -> list[tuple[Script, TenantScript]]:
+def list_active_scripts(
+    db: Session, tenant_id: int
+) -> list[tuple[Script, TenantScript]]:
     """Scripts ativos disponiveis para o tenant, com o binding correspondente."""
     stmt = (
         select(Script, TenantScript)

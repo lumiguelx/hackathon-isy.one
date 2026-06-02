@@ -27,7 +27,11 @@ def create(db: Session, data: ScriptCreate) -> Script:
 
 
 def update(db: Session, script: Script, data: ScriptUpdate) -> Script:
-    if data.nome and data.nome != script.nome and scripts_repo.get_by_nome(db, data.nome):
+    if (
+        data.nome
+        and data.nome != script.nome
+        and scripts_repo.get_by_nome(db, data.nome)
+    ):
         raise ScriptValidationError(f"Ja existe script com nome '{data.nome}'.")
     if data.caminho is not None:
         _validate_caminho(data.caminho)

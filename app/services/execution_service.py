@@ -36,8 +36,11 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
     started = time.perf_counter()
     try:
         proc = subprocess.run(
-            argv, capture_output=True, text=True,
-            timeout=settings.exec_timeout, check=False,
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=settings.exec_timeout,
+            check=False,
         )
         duracao_ms = int((time.perf_counter() - started) * 1000)
         status = "sucesso" if proc.returncode == 0 else "falha"

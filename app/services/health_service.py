@@ -18,25 +18,35 @@ def _as_utc(dt: datetime) -> datetime:
 
 
 def _execucoes(db: Session, tenant_id: int):
-    return events_repo.list_by_tenant(db, tenant_id, tipo=ev.EXECUTION_COMPLETED, limit=200)
+    return events_repo.list_by_tenant(
+        db, tenant_id, tipo=ev.EXECUTION_COMPLETED, limit=200
+    )
 
 
 def _containers_down(stdout: str) -> bool:
     # Heuristica simples: container fora do ar se aparecer "Exited"/"Down" ou faltar "Up".
-    linhas = [l for l in stdout.splitlines() if "isyone-" in l.lower()]
-    return any(("Exited" in l or "Down" in l or "Up" not in l) for l in linhas)
+    linhas = [linha for linha in stdout.splitlines() if "isyone-" in linha.lower()]
+    return any(
+        ("Exited" in linha or "Down" in linha or "Up" not in linha) for linha in linhas
+    )
 
 
 def calcular_saude(db: Session, tenant: Tenant) -> dict:
     execucoes = _execucoes(db, tenant.id)
     ultima = execucoes[0].payload if execucoes else None
     backup_event = next(
-        (e for e in execucoes
-         if e.payload.get("categoria") == "backup" and e.payload.get("status") == "sucesso"),
+        (
+            e
+            for e in execucoes
+            if e.payload.get("categoria") == "backup"
+            and e.payload.get("status") == "sucesso"
+        ),
         None,
     )
     backup = backup_event.payload if backup_event else None
-    status_event = next((e for e in execucoes if e.payload.get("categoria") == "status"), None)
+    status_event = next(
+        (e for e in execucoes if e.payload.get("categoria") == "status"), None
+    )
     containers_stdout = status_event.payload.get("stdout") if status_event else None
 
     status_geral = "verde"

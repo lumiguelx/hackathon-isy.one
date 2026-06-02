@@ -40,8 +40,6 @@ def _script_out(s) -> dict:
     return ScriptOut.model_validate(s).model_dump(mode="json")
 
 
-# --- Tenants ---
-
 @router.get("/tenants")
 def list_tenants(db: Session = Depends(get_db)) -> dict:
     return ok([_tenant_out(t) for t in tenants_repo.list_all(db)])
@@ -71,8 +69,6 @@ def delete_tenant(slug: str, db: Session = Depends(get_db)) -> dict:
     return ok(message="Cliente removido.")
 
 
-# --- Catalogo de scripts ---
-
 @router.get("/scripts")
 def list_scripts(db: Session = Depends(get_db)) -> dict:
     return ok([_script_out(s) for s in scripts_repo.list_all(db)])
@@ -87,20 +83,24 @@ def create_script(body: ScriptCreate, db: Session = Depends(get_db)) -> dict:
 
 
 @router.put("/scripts/{script_id}")
-def update_script(script_id: int, body: ScriptUpdate, db: Session = Depends(get_db)) -> dict:
+def update_script(
+    script_id: int, body: ScriptUpdate, db: Session = Depends(get_db)
+) -> dict:
     script = scripts_repo.get(db, script_id)
     if script is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Script nao encontrado.")
     try:
-        return ok(_script_out(script_service.update(db, script, body)), "Script atualizado.")
+        return ok(
+            _script_out(script_service.update(db, script, body)), "Script atualizado."
+        )
     except script_service.ScriptValidationError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
 
-# --- Binding tenant<->script ---
-
 @router.put("/tenants/{slug}/scripts")
-def bind_script(slug: str, body: TenantScriptBinding, db: Session = Depends(get_db)) -> dict:
+def bind_script(
+    slug: str, body: TenantScriptBinding, db: Session = Depends(get_db)
+) -> dict:
     tenant = tenants_repo.get_by_slug(db, slug)
     if tenant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
@@ -109,10 +109,11 @@ def bind_script(slug: str, body: TenantScriptBinding, db: Session = Depends(get_
     binding = tenant_scripts_repo.upsert(
         db, tenant.id, body.script_id, body.parametros_default, body.ativo
     )
-    return ok(TenantScriptOut.model_validate(binding).model_dump(mode="json"), "Binding salvo.")
+    return ok(
+        TenantScriptOut.model_validate(binding).model_dump(mode="json"),
+        "Binding salvo.",
+    )
 
-
-# --- Tokens ---
 
 @router.put("/token")
 def rotate_admin_token(body: TokenUpdate, db: Session = Depends(get_db)) -> dict:
@@ -121,7 +122,9 @@ def rotate_admin_token(body: TokenUpdate, db: Session = Depends(get_db)) -> dict
 
 
 @router.put("/tenants/{slug}/token")
-def rotate_tenant_token(slug: str, body: TokenUpdate, db: Session = Depends(get_db)) -> dict:
+def rotate_tenant_token(
+    slug: str, body: TokenUpdate, db: Session = Depends(get_db)
+) -> dict:
     tenant = tenants_repo.get_by_slug(db, slug)
     if tenant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
@@ -129,8 +132,6 @@ def rotate_tenant_token(slug: str, body: TokenUpdate, db: Session = Depends(get_
     events_repo.append(db, ev.TOKEN_ROTATED, {"alvo": slug}, tenant_id=tenant.id)
     return ok(message="Token do cliente rotacionado.")
 
-
-# --- Dashboard ---
 
 @router.get("/tenants/health")
 def dashboard(db: Session = Depends(get_db)) -> dict:
