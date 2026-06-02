@@ -20,9 +20,9 @@ fi
 if [ -n "${ISY_SSH_HOST:-}" ]; then
   echo "[remoto ${ISY_SSH_USER:-isyone}@${ISY_SSH_HOST}:${ISY_SSH_PORT:-22}]"
   if [ -n "$FILTRO" ]; then
-    exec "$DIR/_ssh.sh" "docker ps --filter name=$FILTRO --format '$FORMATO'"
+    exec "$DIR/_ssh.sh" "docker ps -a --filter name=$FILTRO --format '$FORMATO'"
   fi
-  exec "$DIR/_ssh.sh" "docker ps --format '$FORMATO'"
+  exec "$DIR/_ssh.sh" "docker ps -a --format '$FORMATO'"
 fi
 
 echo "[local]"
@@ -31,7 +31,7 @@ if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 if [ -n "$FILTRO" ]; then
-  docker ps --filter "name=${FILTRO}" --format "$FORMATO"
+  docker ps -a --filter "name=${FILTRO}" --format "$FORMATO"
 else
-  docker ps --format "$FORMATO"
+  docker ps -a --format "$FORMATO"
 fi

@@ -24,12 +24,15 @@ class ScriptNotExecutable(RuntimeError):
 
 
 def _build_env(tenant: Tenant) -> dict:
-    """Env do subprocess com o endpoint SSH do tenant, quando configurado.
+    """Env do subprocess com o slug e o endpoint SSH do tenant, quando configurado.
 
-    ISY_SSH_KEY (chave privada) ja vem do ambiente do container e e repassada.
-    Sem ssh_host, nenhuma variavel SSH e injetada e o script roda localmente.
+    ISY_TENANT_SLUG identifica o cliente para os scripts (ex.: diretorio de logs,
+    nome dos containers no servidor remoto). ISY_SSH_KEY (chave privada) ja vem do
+    ambiente do container e e repassada. Sem ssh_host, nenhuma variavel SSH e
+    injetada e o script roda localmente.
     """
     env = os.environ.copy()
+    env["ISY_TENANT_SLUG"] = tenant.slug
     if tenant.ssh_host:
         env["ISY_SSH_HOST"] = tenant.ssh_host
         env["ISY_SSH_PORT"] = str(tenant.ssh_port or 22)
