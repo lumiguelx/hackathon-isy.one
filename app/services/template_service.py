@@ -18,9 +18,12 @@ _PLACEHOLDER_RE = re.compile(r"\{\{\s*([^{}]*?)\s*\}\}")
 _PARAM_RE = re.compile(r"^param:([a-z][a-z0-9_]*):(int|slug)$")
 
 _CONTAINER_ROLES = {"db": "db", "odoo": "odoo", "agent": "ifood-agent"}
+# Slug tem que comecar por alfanumerico: um valor iniciado por '-' viraria uma
+# flag no comando remoto (argument/flag smuggling), nao um argumento.
+_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _PARAM_VALIDADORES = {
     "int": re.compile(r"^[0-9]+$"),
-    "slug": re.compile(r"^[a-z0-9-]+$"),
+    "slug": _SLUG_RE,
 }
 _MAX_LEN = 2000
 
@@ -88,6 +91,10 @@ def render(template: str, tenant, valores: list[str]) -> str:
     inconsistencia.
     """
     validate(template)
+    # O slug do tenant alimenta {{slug}} (e indiretamente db/logdir/container). Se
+    # comecasse por '-', {{slug}} viraria uma flag no comando remoto.
+    if not _SLUG_RE.match(getattr(tenant, "slug", "") or ""):
+        raise TemplateError("Slug do tenant invalido para render seguro.")
     params = extract_params(template)
     if len(valores) != len(params):
         raise TemplateError(
