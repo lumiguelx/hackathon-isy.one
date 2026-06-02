@@ -26,6 +26,10 @@ venv/
 .pytest_cache/
 .mypy_cache/
 
+# Banco local (SQLite)
+*.db
+*.sqlite3
+
 # Logs
 *.log
 npm-debug.log*
