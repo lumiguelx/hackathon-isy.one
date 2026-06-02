@@ -7,6 +7,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# openssh-client: o painel alcanca o servidor de cada cliente por SSH.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
 # Instala deps primeiro para aproveitar cache de camada.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

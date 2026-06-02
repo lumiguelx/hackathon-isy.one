@@ -65,6 +65,8 @@ class TenantCreate(BaseModel):
     dominio: str = Field(min_length=1, max_length=120)
     porta: int = Field(ge=1, le=65535)
     db_name: str = Field(min_length=1, max_length=120)
+    ssh_host: str | None = Field(default=None, max_length=255)
+    ssh_port: int | None = Field(default=None, ge=1, le=65535)
     token: str = Field(min_length=8, max_length=255)
     ativo: bool = True
 
@@ -74,6 +76,8 @@ class TenantUpdate(BaseModel):
     dominio: str | None = Field(default=None, max_length=120)
     porta: int | None = Field(default=None, ge=1, le=65535)
     db_name: str | None = Field(default=None, max_length=120)
+    ssh_host: str | None = Field(default=None, max_length=255)
+    ssh_port: int | None = Field(default=None, ge=1, le=65535)
     ativo: bool | None = None
 
 
@@ -86,6 +90,8 @@ class TenantOut(BaseModel):
     dominio: str
     porta: int
     db_name: str
+    ssh_host: str | None
+    ssh_port: int | None
     ativo: bool
     criado_em: datetime
 

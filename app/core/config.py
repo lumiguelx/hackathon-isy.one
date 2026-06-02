@@ -29,5 +29,9 @@ class Settings(BaseSettings):
     # Se True, semeia scripts de demonstracao no primeiro boot (banco vazio).
     seed_demo: bool = False
 
+    # Usuario SSH para alcancar o servidor do cliente (quando tenant.ssh_host esta setado).
+    # A chave privada vem de ISY_SSH_KEY (secret), lida pelos scripts via env.
+    ssh_user: str = "isyone"
+
 
 settings = Settings()

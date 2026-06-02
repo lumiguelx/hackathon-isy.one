@@ -5,6 +5,7 @@ timeout, caminho dentro do diretorio montado (anti command injection / traversal
 Cada execucao vira um evento imutavel no event store, com ou sem sucesso.
 """
 
+import os
 import subprocess
 import time
 
@@ -20,6 +21,20 @@ from app.services import alert_service
 
 class ScriptNotExecutable(RuntimeError):
     """Script ativo, mas arquivo ausente ou caminho invalido."""
+
+
+def _build_env(tenant: Tenant) -> dict:
+    """Env do subprocess com o endpoint SSH do tenant, quando configurado.
+
+    ISY_SSH_KEY (chave privada) ja vem do ambiente do container e e repassada.
+    Sem ssh_host, nenhuma variavel SSH e injetada e o script roda localmente.
+    """
+    env = os.environ.copy()
+    if tenant.ssh_host:
+        env["ISY_SSH_HOST"] = tenant.ssh_host
+        env["ISY_SSH_PORT"] = str(tenant.ssh_port or 22)
+        env["ISY_SSH_USER"] = settings.ssh_user
+    return env
 
 
 def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> Event:
@@ -41,6 +56,7 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
             text=True,
             timeout=settings.exec_timeout,
             check=False,
+            env=_build_env(tenant),
         )
         duracao_ms = int((time.perf_counter() - started) * 1000)
         status = "sucesso" if proc.returncode == 0 else "falha"

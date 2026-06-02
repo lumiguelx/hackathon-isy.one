@@ -46,6 +46,9 @@ class Tenant(Base):
     dominio: Mapped[str] = mapped_column(String(120))
     porta: Mapped[int] = mapped_column(Integer)
     db_name: Mapped[str] = mapped_column(String(120))
+    # Endpoint SSH do servidor do cliente. Vazio = sem acesso remoto (scripts rodam local).
+    ssh_host: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ssh_port: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
     token: Mapped[str] = mapped_column(String(255))
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
