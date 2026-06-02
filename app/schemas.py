@@ -2,21 +2,36 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ScriptCreate(BaseModel):
     nome: str = Field(min_length=1, max_length=120)
-    caminho: str = Field(min_length=1, max_length=255)
+    caminho: str = Field(default="", max_length=255)
+    template: str | None = Field(default=None, max_length=2000)
+    tipo: str = "arquivo"
     parametros: str = Field(default="", max_length=255)
     descricao: str = Field(default="", max_length=255)
     categoria: str = "other"
+    tenant_id: int | None = None
     ativo: bool = True
+
+    @model_validator(mode="after")
+    def _coerente(self) -> "ScriptCreate":
+        if self.tipo not in ("arquivo", "template"):
+            raise ValueError("tipo deve ser 'arquivo' ou 'template'.")
+        if self.tipo == "arquivo" and not self.caminho:
+            raise ValueError("caminho e obrigatorio para tipo 'arquivo'.")
+        if self.tipo == "template" and not (self.template and self.template.strip()):
+            raise ValueError("template e obrigatorio para tipo 'template'.")
+        return self
 
 
 class ScriptUpdate(BaseModel):
     nome: str | None = Field(default=None, max_length=120)
     caminho: str | None = Field(default=None, max_length=255)
+    template: str | None = Field(default=None, max_length=2000)
+    tipo: str | None = None
     parametros: str | None = Field(default=None, max_length=255)
     descricao: str | None = Field(default=None, max_length=255)
     categoria: str | None = None
@@ -29,11 +44,15 @@ class ScriptOut(BaseModel):
     id: int
     nome: str
     caminho: str
+    template: str | None
+    tipo: str
     parametros: str
     descricao: str
     categoria: str
+    tenant_id: int | None
     ativo: bool
     criado_em: datetime
+    parametros_schema: list[dict] = []
 
 
 class RunRequest(BaseModel):

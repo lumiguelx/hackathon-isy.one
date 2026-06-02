@@ -42,3 +42,36 @@ def test_crud_tenant_e_binding(client):
 
 def test_admin_exige_token(client):
     assert client.get("/api/v1/admin/tenants").status_code == 401
+
+
+def test_criar_script_template(client):
+    r = client.post(
+        "/api/v1/admin/scripts",
+        headers=AUTH,
+        json={
+            "nome": "reinicia-agente",
+            "tipo": "template",
+            "template": "docker restart {{container:agent}}",
+            "categoria": "update",
+        },
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["data"]["tipo"] == "template"
+
+
+def test_criar_script_template_sem_corpo_falha(client):
+    r = client.post(
+        "/api/v1/admin/scripts",
+        headers=AUTH,
+        json={"nome": "x", "tipo": "template", "categoria": "update"},
+    )
+    assert r.status_code == 422
+
+
+def test_criar_script_arquivo_sem_caminho_falha(client):
+    r = client.post(
+        "/api/v1/admin/scripts",
+        headers=AUTH,
+        json={"nome": "y", "tipo": "arquivo", "categoria": "other"},
+    )
+    assert r.status_code == 422

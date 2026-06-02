@@ -27,6 +27,8 @@ class Script(Base):
     nome: Mapped[str] = mapped_column(String(120), unique=True)
     # Caminho do .sh relativo ao diretorio montado (validado no service).
     caminho: Mapped[str] = mapped_column(String(255))
+    tipo: Mapped[str] = mapped_column(String(20), default="arquivo")
+    template: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     parametros: Mapped[str] = mapped_column(String(255), default="")
     descricao: Mapped[str] = mapped_column(String(255), default="")
     categoria: Mapped[str] = mapped_column(String(20), default="other")
