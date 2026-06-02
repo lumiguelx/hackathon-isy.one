@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Webhook opcional para alertas (Discord/Telegram-compativel). Vazio = desativado.
     alert_webhook_url: str = ""
 
+    # URL do Grafana de observabilidade da frota. Vazio = botao oculto no painel.
+    grafana_url: str = ""
+
     # Se True, semeia scripts de demonstracao no primeiro boot (banco vazio).
     seed_demo: bool = False
 
