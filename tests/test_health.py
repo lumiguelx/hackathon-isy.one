@@ -20,6 +20,12 @@ def _tenant(db, slug="c1", porta=8151):
     )
 
 
+def test_config_publica_expoe_grafana_url(client):
+    res = client.get("/api/v1/config")
+    assert res.status_code == 200
+    assert "grafana_url" in res.json()["data"]
+
+
 def test_status_vermelho_quando_ultima_falhou(client):
     with SessionLocal() as db:
         t = _tenant(db)

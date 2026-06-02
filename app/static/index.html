@@ -27,7 +27,7 @@
     <span class="muted">Token</span>
     <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" />
     <button onclick="loadDashboard()">Atualizar</button>
-    <button onclick="window.open(GRAFANA_URL, '_blank')" title="Saude do Docker da frota (OTel + Prometheus + Grafana)" style="margin-left:auto">Saude da frota (Grafana)</button>
+    <button id="btn-grafana" title="Saude do Docker da frota (OTel + Prometheus + Grafana)" style="margin-left:auto; display:none">Saude da frota (Grafana)</button>
   </header>
   <main>
     <div class="grid" id="grid"></div>
@@ -42,8 +42,6 @@
   </main>
   <script>
     const $ = (id) => document.getElementById(id);
-    // Grafana de observabilidade (saude do Docker da frota) — roda no servidor do cliente.
-    const GRAFANA_URL = "http://56.124.102.88:3000";
     const token = () => $("token").value.trim();
     const headers = () => ({ "Content-Type": "application/json", "X-Isy-Token": token() });
     let slugAtual = null;
@@ -99,6 +97,19 @@
       $("d-logs").innerHTML = data.map((l) => `<div class="muted">${l.ocorrido_em} — ${l.script_nome || l.tipo} ${l.status || ""}</div>`).join("") || "<div class='muted'>sem registros</div>";
     }
 
+    async function loadConfig() {
+      try {
+        const res = await fetch("/api/v1/config");
+        const { data } = await res.json();
+        if (data && data.grafana_url) {
+          const btn = $("btn-grafana");
+          btn.onclick = () => window.open(data.grafana_url, "_blank");
+          btn.style.display = "";
+        }
+      } catch (_) { /* sem config = botao continua oculto */ }
+    }
+
+    loadConfig();
     loadDashboard();
   </script>
 </body>
