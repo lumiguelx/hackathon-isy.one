@@ -9,7 +9,7 @@ class ScriptCreate(BaseModel):
     nome: str = Field(min_length=1, max_length=120)
     caminho: str = Field(default="", max_length=255)
     template: str | None = Field(default=None, max_length=2000)
-    tipo: str = "arquivo"
+    tipo: str = Field(default="arquivo", max_length=20)
     parametros: str = Field(default="", max_length=255)
     descricao: str = Field(default="", max_length=255)
     categoria: str = "other"
@@ -28,10 +28,12 @@ class ScriptCreate(BaseModel):
 
 
 class ScriptUpdate(BaseModel):
+    # Patch parcial: a coerencia tipo/caminho/template e o dono (imutavel) sao
+    # validados em script_service.update, nao por model_validator aqui.
     nome: str | None = Field(default=None, max_length=120)
     caminho: str | None = Field(default=None, max_length=255)
     template: str | None = Field(default=None, max_length=2000)
-    tipo: str | None = None
+    tipo: str | None = Field(default=None, max_length=20)
     parametros: str | None = Field(default=None, max_length=255)
     descricao: str | None = Field(default=None, max_length=255)
     categoria: str | None = None
@@ -52,7 +54,7 @@ class ScriptOut(BaseModel):
     tenant_id: int | None
     ativo: bool
     criado_em: datetime
-    parametros_schema: list[dict] = []
+    parametros_schema: list[dict] = Field(default_factory=list)
 
 
 class RunRequest(BaseModel):
