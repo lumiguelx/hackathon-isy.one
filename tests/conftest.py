@@ -33,14 +33,3 @@ def client():
     with TestClient(app) as c:
         yield c
     Base.metadata.drop_all(bind=engine)
-
-
-def make_script(client, *, nome="echo", caminho="echo_args.sh", ativo=True) -> int:
-    """Cadastra um script via API e devolve o id."""
-    resp = client.post(
-        "/api/v1/admin/scripts",
-        json={"nome": nome, "caminho": caminho, "ativo": ativo},
-        headers=AUTH,
-    )
-    assert resp.status_code == 201, resp.text
-    return resp.json()["data"]["id"]
