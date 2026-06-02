@@ -54,3 +54,34 @@ class ExecutionOut(BaseModel):
 
 class TokenUpdate(BaseModel):
     token: str = Field(min_length=8, max_length=255)
+
+
+class TenantCreate(BaseModel):
+    slug: str = Field(min_length=1, max_length=60)
+    nome: str = Field(min_length=1, max_length=120)
+    dominio: str = Field(min_length=1, max_length=120)
+    porta: int = Field(ge=1, le=65535)
+    db_name: str = Field(min_length=1, max_length=120)
+    token: str = Field(min_length=8, max_length=255)
+    ativo: bool = True
+
+
+class TenantUpdate(BaseModel):
+    nome: str | None = Field(default=None, max_length=120)
+    dominio: str | None = Field(default=None, max_length=120)
+    porta: int | None = Field(default=None, ge=1, le=65535)
+    db_name: str | None = Field(default=None, max_length=120)
+    ativo: bool | None = None
+
+
+class TenantOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    slug: str
+    nome: str
+    dominio: str
+    porta: int
+    db_name: str
+    ativo: bool
+    criado_em: datetime

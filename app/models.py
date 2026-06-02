@@ -25,6 +25,20 @@ class Script(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class Tenant(Base):
+    __tablename__ = "tenants"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(String(60), unique=True)
+    nome: Mapped[str] = mapped_column(String(120))
+    dominio: Mapped[str] = mapped_column(String(120))
+    porta: Mapped[int] = mapped_column(Integer)
+    db_name: Mapped[str] = mapped_column(String(120))
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    token: Mapped[str] = mapped_column(String(255))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class Event(Base):
     __tablename__ = "events"
 
