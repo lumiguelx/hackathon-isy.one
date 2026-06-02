@@ -55,3 +55,38 @@ def test_token_de_outro_cliente_nao_executa(client):
         json={"parametros": []},
     )
     assert rr.status_code == 401
+
+
+def test_list_scripts_expoe_tipo_e_params(client):
+    client.post(
+        "/api/v1/admin/tenants",
+        headers=AUTH,
+        json={
+            "slug": "tux-burger",
+            "nome": "Tux",
+            "dominio": "tux.isy.one",
+            "porta": 8201,
+            "db_name": "db_tux_burger",
+            "token": "tok-tux-aaaaaa",
+        },
+    )
+    tid = next(
+        t["id"]
+        for t in client.get("/api/v1/admin/tenants", headers=AUTH).json()["data"]
+        if t["slug"] == "tux-burger"
+    )
+    client.post(
+        "/api/v1/admin/scripts",
+        headers=AUTH,
+        json={
+            "nome": "limpa-cupons",
+            "tipo": "template",
+            "template": "cleanup {{param:dias:int}}",
+            "categoria": "cleanup",
+            "tenant_id": tid,
+        },
+    )
+    data = client.get("/api/v1/tenants/tux-burger/scripts", headers=AUTH).json()["data"]
+    item = next(s for s in data if s["nome"] == "limpa-cupons")
+    assert item["tipo"] == "template"
+    assert item["parametros_schema"] == [{"nome": "dias", "tipo": "int"}]
