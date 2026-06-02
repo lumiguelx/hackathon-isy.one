@@ -134,8 +134,8 @@ Nada e estado guardado: e derivado na hora. Com 5 tenants, instantaneo.
 
 ## Seed (demo viva)
 
-- 5 tenants: `fmu`, `bistro-leblon`, `sushi-itacare`, `padaria-pao-quente`, `burger-vila`,
-  cada um com db/dominio/porta/token.
+- 5 tenants: `cliente-1` .. `cliente-5` (slug `cliente-N`, dominio `clienteN.isy.one`,
+  db `db_clienteN`, porta sequencial a partir de 8151), cada um com token proprio.
 - Catalogo global com categorias: `provisionar`, `backup_db`, `cleanup_logs`, `update_agent`,
   `docker_status`. Criar `backup_db.sh` (simulado: pg_dump + tar do filestore).
 - Bindings `tenant_scripts` com defaults por cliente.
