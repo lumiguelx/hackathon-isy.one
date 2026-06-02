@@ -84,3 +84,14 @@ def test_render_faltando_valor():
 def test_render_valores_em_excesso():
     with pytest.raises(ts.TemplateError):
         ts.render("limpa {{param:dias:int}}", _tenant(), ["30", "sobra"])
+
+
+def test_render_rejeita_param_slug_comecando_com_hifen():
+    # argument/flag smuggling: '-rf' viraria flag no comando remoto.
+    with pytest.raises(ts.TemplateError):
+        ts.render("docker logs {{param:alvo:slug}}", _tenant(), ["-rf"])
+
+
+def test_render_rejeita_tenant_slug_comecando_com_hifen():
+    with pytest.raises(ts.TemplateError):
+        ts.render("echo {{slug}}", _tenant("-rf"), [])
