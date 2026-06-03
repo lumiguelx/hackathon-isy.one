@@ -23,8 +23,15 @@ class Settings(BaseSettings):
     # Limite de caracteres de stdout/stderr persistidos por execucao.
     output_limit: int = 10_000
 
-    # Webhook opcional para alertas (Discord/Telegram-compativel). Vazio = desativado.
+    # Webhook global de notificacao (Slack Incoming Webhook). Vazio = desativado.
+    # Cada tenant pode sobrescrever com o seu (tenant.alert_webhook_url); este e o fallback.
     alert_webhook_url: str = ""
+
+    # Gatilhos de notificacao (best-effort; nunca quebram a execucao).
+    notify_on_failure: bool = True  # script terminou com erro
+    notify_on_success: bool = True  # manutencao manual concluida com sucesso
+    notify_on_scheduled: bool = True  # execucao disparada pelo agendador (cron)
+    notify_on_fleet_red: bool = True  # saude do cliente virou vermelho
 
     # URL do Grafana de observabilidade da frota. Vazio = botao oculto no painel.
     grafana_url: str = ""

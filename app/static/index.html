@@ -467,6 +467,16 @@
               <div class="field"><label>Novo token (≥ 8 caracteres)</label><input id="tok-novo" placeholder="novo token do cliente" /></div>
               <button class="btn" onclick="rotateTenant()">Rotacionar token do cliente</button>
             </div>
+            <div class="card">
+              <div class="name">Notificações (Slack)</div>
+              <p class="muted" style="margin:8px 0 14px">Webhook do cliente para alertas de falha, sucesso, agendamento e frota vermelha. Vazio = usa o webhook global.</p>
+              <div class="field"><label>Cliente</label><select id="nt-cliente" onchange="loadWebhook()"></select></div>
+              <div class="field"><label>Slack Incoming Webhook URL</label><input id="nt-webhook" placeholder="https://hooks.slack.com/services/..." /></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn" onclick="saveWebhook()">Salvar webhook</button>
+                <button class="btn ghost" onclick="testWebhook()">Enviar teste</button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1203,6 +1213,37 @@
     /* ---- TOKEN ---- */
     function fillClienteSelect() {
       $("tok-cliente").innerHTML = state.tenants.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)} (${esc(t.slug)})</option>`).join("");
+      fillNotifSelect();
+    }
+
+    /* ---- NOTIFICACOES (webhook por cliente) ---- */
+    async function fillNotifSelect() {
+      const sel = $("nt-cliente");
+      if (!sel) return;
+      // tenantsMeta tem os tenants completos (com alert_webhook_url) para prefill.
+      if (!state.tenantsMeta.length) { try { const { data } = await api("/api/v1/admin/tenants"); state.tenantsMeta = data; } catch (_) {} }
+      sel.innerHTML = state.tenantsMeta.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)} (${esc(t.slug)})</option>`).join("");
+      loadWebhook();
+    }
+    function loadWebhook() {
+      const slug = $("nt-cliente").value;
+      const t = state.tenantsMeta.find(x => x.slug === slug) || {};
+      $("nt-webhook").value = t.alert_webhook_url || "";
+    }
+    async function saveWebhook() {
+      const slug = $("nt-cliente").value, url = $("nt-webhook").value.trim();
+      try {
+        await api(`/api/v1/admin/tenants/${slug}`, { method: "PUT", body: JSON.stringify({ alert_webhook_url: url }) });
+        const t = state.tenantsMeta.find(x => x.slug === slug); if (t) t.alert_webhook_url = url;
+        toast("Webhook salvo", "ok");
+      } catch (e) { toast(e.message, "err"); }
+    }
+    async function testWebhook() {
+      const slug = $("nt-cliente").value;
+      try {
+        await api(`/api/v1/admin/tenants/${slug}/test-alert`, { method: "POST" });
+        toast("Notificação de teste enviada", "ok");
+      } catch (e) { toast(e.message || "Sem webhook configurado", "err"); }
     }
     async function rotateAdmin() {
       const tk = $("adm-token").value.trim(); if (tk.length < 8) { toast("Token deve ter ≥ 8 caracteres", "err"); return; }

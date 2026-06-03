@@ -18,7 +18,7 @@ from app.core.config import settings
 from app.core.security import ScriptPathError, resolve_script_path
 from app.models import Event, Script, Tenant
 from app.repositories import events_repo
-from app.services import alert_service, command, template_service
+from app.services import command, notifications, template_service
 
 
 class ScriptNotExecutable(RuntimeError):
@@ -82,8 +82,7 @@ def _record(
     event = events_repo.append(
         db, ev.EXECUTION_COMPLETED, payload, tenant_id=tenant.id, script_id=script.id
     )
-    if status == "falha":
-        alert_service.notify_failure(tenant.slug, payload)
+    notifications.notify_execution(db, tenant, payload, origem)
     return event
 
 

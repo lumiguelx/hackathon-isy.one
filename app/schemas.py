@@ -124,6 +124,7 @@ class TenantCreate(BaseModel):
     db_name: str = Field(min_length=1, max_length=120)
     ssh_host: str | None = Field(default=None, max_length=255)
     ssh_port: int | None = Field(default=None, ge=1, le=65535)
+    alert_webhook_url: str | None = Field(default=None, max_length=500)
     token: str = Field(min_length=8, max_length=255)
     ativo: bool = True
 
@@ -135,6 +136,7 @@ class TenantUpdate(BaseModel):
     db_name: str | None = Field(default=None, max_length=120)
     ssh_host: str | None = Field(default=None, max_length=255)
     ssh_port: int | None = Field(default=None, ge=1, le=65535)
+    alert_webhook_url: str | None = Field(default=None, max_length=500)
     ativo: bool | None = None
 
 
@@ -149,6 +151,7 @@ class TenantOut(BaseModel):
     db_name: str
     ssh_host: str | None
     ssh_port: int | None
+    alert_webhook_url: str | None
     ativo: bool
     criado_em: datetime
 

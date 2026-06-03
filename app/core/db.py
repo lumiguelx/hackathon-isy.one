@@ -52,6 +52,9 @@ _MIGRACOES: dict[str, dict[str, str]] = {
         "template": "VARCHAR(2000)",
         "param_schema": "JSON",
     },
+    "tenants": {
+        "alert_webhook_url": "VARCHAR(500)",
+    },
 }
 
 

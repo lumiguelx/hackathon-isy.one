@@ -53,6 +53,9 @@ class Tenant(Base):
     # Endpoint SSH do servidor do cliente. Vazio = sem acesso remoto (scripts rodam local).
     ssh_host: Mapped[str | None] = mapped_column(String(255), nullable=True)
     ssh_port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Webhook de notificacao do proprio cliente (ex.: Slack Incoming Webhook).
+    # Vazio = usa o webhook global (ISY_ALERT_WEBHOOK_URL), se houver.
+    alert_webhook_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
     token: Mapped[str] = mapped_column(String(255))
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
