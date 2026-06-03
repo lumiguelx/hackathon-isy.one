@@ -88,12 +88,6 @@ Backend em camadas com dependências apontando só para dentro
 deploy, SQLite na demo local), empacotada numa imagem Docker enxuta sobre
 `python:3.11-slim`, publicada no Railway.
 
-Aprofundamento:
-
-- **Arquitetura e diagramas** — [`docs/architecture.md`](docs/architecture.md)
-- **Escopo / PRD** — [`docs/specs/2026-06-01-isy-shell-automation-api.md`](docs/specs/2026-06-01-isy-shell-automation-api.md)
-- **Decisões de arquitetura** — [`docs/adr/`](docs/adr/) (stack, multi-tenant + event sourcing)
-
 ## Time
 
 <table>
