@@ -174,6 +174,42 @@
     .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--royal); box-shadow: 0 0 0 3px rgba(16,28,134,.12); }
     .field .hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
     .field.invalid input { border-color: var(--red); }
+    .param-card { border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 8px; background: var(--surface); overflow: hidden; }
+    .param-card.open { box-shadow: var(--shadow); border-color: var(--border-strong); }
+    .param-head { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; user-select: none; }
+    .param-card.open .param-head { border-bottom: 1px solid var(--border); background: var(--surface-2); }
+    .param-head:hover { background: var(--surface-2); }
+    .param-head .drag { color: var(--muted-2); display: inline-flex; }
+    .param-head .ptype { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .param-head .req-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+    .param-actions { margin-left: auto; display: flex; gap: 1px; }
+    .param-actions button { border: 0; background: none; cursor: pointer; color: var(--muted); width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
+    .param-actions button:hover { background: var(--surface-2); color: var(--text); }
+    .param-actions button.del:hover { background: var(--red-soft); color: var(--red); }
+    .param-body { padding: 16px 14px; }
+    .pform { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 18px; }
+    .pform > label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); font-weight: 500; }
+    .pform > label.full { grid-column: 1 / -1; }
+    .pform > label.chk { flex-direction: row; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); align-self: end; padding-bottom: 7px; cursor: pointer; }
+    .pform input, .pform select { padding: 8px 10px; font-size: 13px; }
+    .pform label.chk input { width: auto; }
+    .exec-row label.chk { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-2); }
+    .exec-item { margin-bottom: 9px; }
+    .exec-item .exec-row { margin-bottom: 4px; }
+    .sched-tag { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 500; color: #8a6a00;
+      background: var(--gold-soft); border: 1px solid #f3dca0; border-radius: 999px; padding: 4px 12px; margin-left: 2px; width: fit-content; max-width: 100%; }
+    .sched-tag svg { flex-shrink: 0; }
+    .sched-tag .sched-x { margin-left: 8px; background: none; border: 0; color: #8a6a00; cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0; }
+    .sched-tag .sched-x:hover { color: var(--red); }
+    /* editor de codigo */
+    .code-top { display: flex; align-items: center; gap: 18px; margin-bottom: 12px; flex-wrap: wrap; }
+    .code-top .radio { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); cursor: pointer; }
+    .code-top .radio input { width: auto; }
+    .code-top .syntax { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .code-top .syntax select { width: auto; padding: 6px 10px; }
+    .code-wrap { display: flex; border: 1px solid var(--border-strong); border-radius: var(--radius-xs); overflow: hidden; }
+    .code-gutter { background: var(--surface-2); color: var(--muted-2); text-align: right; padding: 12px 10px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; white-space: pre; overflow: hidden; border-right: 1px solid var(--border); }
+    .code-wrap textarea { border: 0; resize: vertical; padding: 12px 14px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; flex: 1; outline: none; white-space: pre; overflow: auto; color: var(--text); min-height: 380px; }
 
     /* ---------- modal ---------- */
     .overlay { position: fixed; inset: 0; background: rgba(1,1,40,.5); display: none; align-items: flex-start; justify-content: center; z-index: 50; padding: 48px 16px; overflow: auto; backdrop-filter: blur(2px); }
@@ -208,10 +244,11 @@
     .sec-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
     .exec-row { display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface);
-      border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 7px; flex-wrap: wrap; }
-    .exec-row .nm { font-weight: 600; min-width: 120px; font-size: 13px; font-family: var(--font-display); }
-    .exec-row input { flex: 1; min-width: 90px; padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 6px; font-size: 12px; font-family: var(--mono); }
-    .exec-row .btn { margin-left: auto; }
+      border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 7px; }
+    .exec-row .nm { font-weight: 600; font-size: 13px; font-family: var(--font-display); }
+    .exec-row .meta { color: var(--muted); font-size: 11px; }
+    .exec-actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+    .exec-actions .btn { min-width: 96px; justify-content: center; }
 
     pre { background: var(--navy-900); color: #b7f5cb; padding: 16px; border-radius: var(--radius-s); white-space: pre-wrap;
       word-break: break-word; font-size: 12px; line-height: 1.6; max-height: 320px; overflow: auto; font-family: var(--mono);
@@ -250,6 +287,33 @@
       .topbar { padding: 0 16px; }
     }
     @media (min-width: 861px) { .scrim { display: none !important; } }
+    /* ---------- footer da equipe ---------- */
+    .team-footer { background: var(--navy-700); color: #c8cbe6; border-top: 2px solid var(--gold);
+      padding: 22px 28px; margin-top: auto; }
+    .team-footer .inner { max-width: 1240px; margin: 0 auto; width: 100%;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .team-footer .group { display: grid; gap: 3px; }
+    .team-footer .group .label { font-family: var(--font-display); font-weight: 800; font-size: 15px;
+      color: #fff; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+    .team-footer .group .label::before { content: ""; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--gold); flex: none; }
+    .team-footer .group .sub { font-size: 11.5px; color: #9a9fce; letter-spacing: .02em; }
+    .team-footer .members { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .team-footer .member { display: flex; align-items: center; gap: 10px; text-decoration: none;
+      color: #c8cbe6; transition: color .12s; }
+    .team-footer .member:hover { color: #fff; }
+    .team-footer .member img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+      border: 2px solid var(--navy-600); transition: border-color .12s; flex: none; background: var(--navy-800); }
+    .team-footer .member:hover img { border-color: var(--gold); }
+    .team-footer .member .who { display: grid; gap: 1px; }
+    .team-footer .member .who .nm { font-size: 13px; font-weight: 600; color: #eef0fb; line-height: 1.2; }
+    .team-footer .member .who .li { display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; color: #9a9fce; }
+    .team-footer .member:hover .who .li { color: var(--gold); }
+    @media (max-width: 720px) {
+      .team-footer .inner { flex-direction: column; align-items: flex-start; }
+      .team-footer .members { gap: 14px; }
+    }
   </style>
 </head>
 <body>
@@ -270,6 +334,10 @@
         <button class="navitem" data-tab="scripts" onclick="switchTab('scripts')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
           Scripts
+        </button>
+        <button class="navitem" data-tab="agendamentos" onclick="switchTab('agendamentos')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+          Agendamentos
         </button>
         <div class="lbl">Segurança & Auditoria</div>
         <button class="navitem" data-tab="token" onclick="switchTab('token')">
@@ -356,6 +424,27 @@
           </div>
         </section>
 
+        <!-- AGENDAMENTOS -->
+        <section class="view" id="view-agendamentos">
+          <div class="view-head">
+            <div>
+              <h2>Agendamentos</h2>
+              <div class="sub">Piloto automático: scripts que rodam sozinhos, sem ninguém clicar.</div>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn" onclick="openSchedule()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo agendamento
+            </button>
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Cliente</th><th>Script</th><th>Quando</th><th>Última execução</th><th>Ativo</th><th></th></tr></thead>
+              <tbody id="sched-body"></tbody>
+            </table>
+          </div>
+        </section>
+
         <!-- TOKEN -->
         <section class="view" id="view-token">
           <div class="view-head"><div><h2>Tokens de Autenticação</h2><div class="sub">Rotação imediata. Cada cliente tem token de execução isolado.</div></div></div>
@@ -397,6 +486,47 @@
           <iframe id="grafana-frame" title="Grafana"></iframe>
         </section>
       </main>
+
+      <footer class="team-footer">
+        <div class="inner">
+          <div class="group">
+            <span class="label">Os Divos</span>
+            <span class="sub">Equipe ISYOPS · Hackathon</span>
+          </div>
+          <div class="members">
+            <a class="member" href="https://www.linkedin.com/in/ana-gabriella-souza-silva-20a5ab241/" target="_blank" rel="noopener">
+              <img src="/ui/brand/team/ana.png" alt="Ana Gabriella" />
+              <span class="who">
+                <span class="nm">Ana Gabriella</span>
+                <span class="li">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                  LinkedIn
+                </span>
+              </span>
+            </a>
+            <a class="member" href="https://www.linkedin.com/in/gabriel-reis-3202b823b/" target="_blank" rel="noopener">
+              <img src="/ui/brand/team/gabriel.png" alt="Gabriel Reis" />
+              <span class="who">
+                <span class="nm">Gabriel Reis</span>
+                <span class="li">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                  LinkedIn
+                </span>
+              </span>
+            </a>
+            <a class="member" href="https://www.linkedin.com/in/miguel-s-souza/" target="_blank" rel="noopener">
+              <img src="/ui/brand/team/miguel.png" alt="Luis Miguel" />
+              <span class="who">
+                <span class="nm">Luis Miguel</span>
+                <span class="li">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                  LinkedIn
+                </span>
+              </span>
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   </div>
 
@@ -474,6 +604,9 @@
         if (/\/admin\/tenants\/health$/.test(path)) return { data: DEMO.tenants };
         if (/\/admin\/tenants$/.test(path)) return { data: DEMO.tenants };
         if (/\/admin\/scripts$/.test(path)) return { data: DEMO.scripts };
+        if (/\/admin\/schedules$/.test(path)) return { data: [
+          { id: 1, tenant_id: 1, tenant_slug: "tux-burger", tenant_nome: "Tux Burger", script_id: 4, script_nome: "docker_status", cron_expr: "0 * * * *", parametros: "", ativo: true, ultima_exec: "2026-06-02T14:00:00" },
+        ] };
         const sc = path.match(/\/tenants\/([^/]+)\/scripts$/);
         if (sc) return { data: DEMO.scripts.filter(s => s.ativo) };
         const lg = path.match(/\/tenants\/([^/]+)\/logs$/);
@@ -515,13 +648,14 @@
     }
 
     /* ---- navegação ---- */
-    const CRUMBS = { clientes: "Clientes", scripts: "Catálogo de Scripts", token: "Tokens", auditoria: "Auditoria", frota: "Saúde da Frota" };
+    const CRUMBS = { clientes: "Clientes", scripts: "Catálogo de Scripts", agendamentos: "Agendamentos", token: "Tokens", auditoria: "Auditoria", frota: "Saúde da Frota" };
     function switchTab(name) {
       document.querySelectorAll(".navitem").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
       document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
       $("crumb").textContent = CRUMBS[name] || name;
       toggleMenu(false);
       if (name === "scripts") loadScripts();
+      if (name === "agendamentos") loadAgendamentos();
       if (name === "token") fillClienteSelect();
       if (name === "auditoria") { fillAuditSelect(); loadAuditoria(); }
     }
@@ -558,17 +692,29 @@
       $("dr-out").textContent = "—";
       $("drawer").classList.add("show");
       try {
-        const { data } = await api(`/api/v1/tenants/${slug}/scripts`);
+        const [{ data }, sch] = await Promise.all([
+          api(`/api/v1/tenants/${slug}/scripts`),
+          api(`/api/v1/tenants/${slug}/schedules`).catch(() => ({ data: [] })),
+        ]);
+        state.runScripts = data;
+        const schedMap = {};
+        (sch.data || []).forEach(x => { schedMap[x.script_id] = x; });
         $("dr-scripts").innerHTML = data.map(s => {
-          const ps = s.parametros_schema || [];
-          const inputs = ps.length
-            ? ps.map(p => `<input id="p-${s.script_id || s.id}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:150px" />`).join("")
-            : `<input id="p-${s.script_id || s.id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
+          const id = s.script_id || s.id;
+          const n = ((s.param_schema || []).filter(p => !p.env && !p.constante).length) || (s.parametros_schema || []).length;
+          const hint = n ? `${n} parâmetro${n > 1 ? "s" : ""}` : "sem parâmetros";
+          const sc = schedMap[id];
           return `
-          <div class="exec-row">
-            <span class="nm">${esc(s.nome)}</span>
-            ${inputs}
-            <button class="btn sm" onclick="runScript(${s.script_id || s.id}, ${ps.length})">executar</button>
+          <div class="exec-item">
+            <div class="exec-row">
+              <span class="nm">${esc(s.nome)}</span>
+              <span class="meta">${hint}</span>
+              <span class="exec-actions">
+                <button class="btn sm" onclick="runDialog(${id})">executar</button>
+                <button class="btn ghost sm" onclick="scheduleDialog(${id})">${sc ? "reagendar" : "agendar"}</button>
+              </span>
+            </div>
+            ${sc ? schedTag(sc) : ""}
           </div>`;
         }).join("") || `<div class="muted">Sem scripts vinculados.</div>`;
       } catch (e) { $("dr-scripts").innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
@@ -576,17 +722,117 @@
     }
     function closeDrawer() { $("drawer").classList.remove("show"); state.current = null; }
 
-    async function runScript(sid, nparams) {
-      let parametros;
-      if (nparams) {
-        parametros = Array.from(document.querySelectorAll(`[id^="p-${sid}-"]`)).map(c => c.value.trim());
-      } else {
-        const raw = ($(`p-${sid}`)?.value || "").trim();
-        parametros = raw ? raw.split(/\s+/) : [];
+    /* ---- agendar um script direto do drawer ---- */
+    function fmtWhen(iso) {
+      const m = String(iso || "").match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      return m ? `${m[3]}/${m[2]} ${m[4]}:${m[5]} UTC` : "";
+    }
+    function schedTag(sc) {
+      const prox = sc.proxima ? ` · próxima ${fmtWhen(sc.proxima)}` : "";
+      const pausado = sc.ativo ? "" : " · pausado";
+      return `<div class="sched-tag">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+        agendado · ${esc(cronLabel(sc.cron_expr))}${prox}${pausado}
+        <button class="sched-x" onclick="removeSchedule(${sc.id})" title="remover agendamento">remover</button>
+      </div>`;
+    }
+    function scheduleDialog(sid) {
+      const s = (state.runScripts || []).find(x => (x.script_id || x.id) === sid) || {};
+      const dowOpts = [1, 2, 3, 4, 5, 6, 0].map(d => `<option value="${d}">${DIAS_SEMANA[d][0].toUpperCase() + DIAS_SEMANA[d].slice(1)}</option>`).join("");
+      modal(`Agendar — ${esc(s.nome)}`, `
+        <div class="muted" style="margin-bottom:14px;font-size:12.5px">Define quando este script roda sozinho neste cliente.</div>
+        <div class="field"><label>Frequência</label>
+          <select id="sd-preset" onchange="sdToggle()">
+            <option value="hora">A cada hora</option>
+            <option value="dia">Diariamente</option>
+            <option value="semana">Semanalmente</option>
+            <option value="minuto">A cada minuto</option>
+          </select></div>
+        <div class="field" id="sd-campo-dow" style="display:none"><label>Dia da semana</label><select id="sd-dow">${dowOpts}</select></div>
+        <div class="field" id="sd-campo-hora" style="display:none"><label>Horário (UTC)</label><input id="sd-hora" type="time" value="03:00" /></div>
+      `, [
+        { label: "Cancelar", cls: "ghost", act: closeModal },
+        { label: "Agendar", cls: "accent", act: () => saveScheduleFor(sid) },
+      ]);
+      sdToggle();
+    }
+    function sdToggle() {
+      const p = $("sd-preset").value;
+      $("sd-campo-hora").style.display = (p === "dia" || p === "semana") ? "" : "none";
+      $("sd-campo-dow").style.display = (p === "semana") ? "" : "none";
+    }
+    function sdBuildCron() {
+      const p = $("sd-preset").value;
+      if (p === "minuto") return "* * * * *";
+      if (p === "hora") return "0 * * * *";
+      const [hh, mm] = ($("sd-hora").value || "03:00").split(":").map(x => parseInt(x, 10));
+      if (p === "dia") return `${mm} ${hh} * * *`;
+      return `${mm} ${hh} * * ${$("sd-dow").value}`;
+    }
+    async function saveScheduleFor(sid) {
+      try {
+        await api(`/api/v1/tenants/${state.current}/schedules`, { method: "POST", body: JSON.stringify({ script_id: sid, cron_expr: sdBuildCron(), ativo: true }) });
+        closeModal(); toast("Agendamento criado", "ok"); openCliente(state.current);
+      } catch (e) { toast(e.message, "err"); }
+    }
+    async function removeSchedule(id) {
+      try {
+        await api(`/api/v1/tenants/${state.current}/schedules/${id}`, { method: "DELETE" });
+        toast("Agendamento removido", "ok"); openCliente(state.current);
+      } catch (e) { toast(e.message, "err"); }
+    }
+
+    /* ---- dialogo de execucao (inputs tipados por parametro) ---- */
+    function paramField(sid, p) {
+      const key = `rp-${sid}-${esc(p.nome)}`, lbl = esc(p.rotulo || p.nome);
+      const req = p.obrigatorio ? ' <span style="color:var(--red)">*</span>' : "";
+      if (p.tipo === "bool")
+        return `<div class="field"><label class="chk" style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="${key}" ${p.default==='true'?'checked':''} style="width:auto"> ${lbl}</label></div>`;
+      let input, hint = "";
+      if (p.tipo === "select")
+        input = `<select id="${key}">${(p.choices||[]).map(c=>`<option ${String(p.default)===c?'selected':''}>${esc(c)}</option>`).join("")}</select>`;
+      else if (p.tipo === "int") {
+        input = `<input id="${key}" type="number" ${p.minimo!=null?`min="${p.minimo}"`:''} ${p.maximo!=null?`max="${p.maximo}"`:''} value="${esc(p.default||'')}" />`;
+        if (p.minimo != null || p.maximo != null) hint = `<div class="hint">faixa ${p.minimo??'−∞'} a ${p.maximo??'∞'}</div>`;
+      } else input = `<input id="${key}" type="${p.secret?'password':'text'}" value="${esc(p.default||'')}" />`;
+      return `<div class="field"><label>${lbl}${req}</label>${input}${hint}</div>`;
+    }
+    function runDialog(sid) {
+      const s = (state.runScripts || []).find(x => (x.script_id || x.id) === sid) || {};
+      const structured = (s.param_schema || []).filter(p => !p.env && !p.constante);
+      const legacy = s.parametros_schema || [];
+      if (!structured.length && !legacy.length) {
+        doRun(sid, { parametros: (s.parametros_default || "").split(/\s+/).filter(Boolean) });
+        return;
       }
+      const fields = structured.length
+        ? structured.map(p => paramField(sid, p)).join("")
+        : legacy.map(p => `<div class="field"><label>${esc(p.nome)} <span class="muted">(${esc(p.tipo)})</span></label><input id="rl-${sid}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" /></div>`).join("");
+      modal(`Executar — ${esc(s.nome)}`, `${s.descricao ? `<div class="muted" style="margin-bottom:14px;font-size:12.5px">${esc(s.descricao)}</div>` : ""}${fields}`, [
+        { label: "Cancelar", cls: "ghost", act: closeModal },
+        { label: "Executar", cls: "accent", act: () => collectAndRun(sid, structured.length > 0) },
+      ]);
+    }
+    function collectAndRun(sid, structured) {
+      const s = (state.runScripts || []).find(x => (x.script_id || x.id) === sid) || {};
+      let body;
+      if (structured) {
+        const valores = {};
+        (s.param_schema || []).filter(p => !p.env && !p.constante).forEach(p => {
+          const el = $(`rp-${sid}-${p.nome}`); if (!el) return;
+          valores[p.nome] = p.tipo === "bool" ? (el.checked ? "true" : "false") : el.value.trim();
+        });
+        body = { valores };
+      } else {
+        body = { parametros: Array.from(document.querySelectorAll(`[id^="rl-${sid}-"]`)).map(c => c.value.trim()) };
+      }
+      closeModal();
+      doRun(sid, body);
+    }
+    async function doRun(sid, body) {
       $("dr-out").textContent = "Executando...";
       try {
-        const { data } = await api(`/api/v1/tenants/${state.current}/scripts/${sid}/run`, { method: "POST", body: JSON.stringify({ parametros }) });
+        const { data } = await api(`/api/v1/tenants/${state.current}/scripts/${sid}/run`, { method: "POST", body: JSON.stringify(body) });
         $("dr-out").textContent = `# ${data.status} (exit ${data.exit_code}) · ${data.duracao_ms}ms\n\n` + (data.stdout || "") + (data.stderr ? "\n[stderr]\n" + data.stderr : "");
         toast(data.status === "sucesso" ? "Executado com sucesso" : "Script retornou falha", data.status === "sucesso" ? "ok" : "err");
         loadDrawerLogs(); loadClientes();
@@ -672,7 +918,7 @@
           <tr>
             <td><strong>${esc(s.nome)}</strong></td>
             <td class="mono" style="font-size:12px">${s.tipo === "template" ? esc(s.template || "") : esc(s.caminho)}</td>
-            <td class="muted">${esc((s.parametros_schema||[]).map(p=>p.nome).join(", ") || s.parametros || '—')}</td>
+            <td class="muted">${esc((s.param_schema||[]).map(p=>p.nome).join(", ") || (s.parametros_schema||[]).map(p=>p.nome).join(", ") || '—')}</td>
             <td class="muted">${esc(s.descricao||'—')}</td>
             <td><span class="badge neutral">${esc(s.categoria)}</span></td>
             <td>${s.tenant_id ? `<span class="badge gold">${esc((state.tenantsMeta.find(t=>t.id===s.tenant_id)||{}).nome || ("#"+s.tenant_id))}</span>` : `<span class="muted">Global</span>`}</td>
@@ -681,11 +927,16 @@
           </tr>`).join("") || `<tr><td colspan="8" class="empty">Catálogo vazio.</td></tr>`;
       } catch (e) { setConn(false); $("scripts-body").innerHTML = `<tr><td colspan="8" class="empty">${esc(e.message)}</td></tr>`; }
     }
+    let editParams = [];
     function openScript(id) {
       const s = id ? state.scripts.find(x => x.id === id) : null;
+      editParams = (s?.param_schema || []).map(p => ({ ...p }));
+      editOpen = -1;
       const tenantsOpts = ['<option value="">Global</option>']
         .concat(state.tenantsMeta.map(t => `<option value="${t.id}" ${s?.tenant_id===t.id?'selected':''}>${esc(t.nome)}</option>`))
         .join("");
+      const codeBtn = (s && s.tipo !== "template")
+        ? `<button class="btn ghost sm" type="button" onclick="openCodeEditor(${id})" style="margin-top:6px">Editar código</button>` : "";
       modal(s ? "Editar script" : "Novo script", `
         <div class="field"><label>Nome *</label><input id="sc-nome" value="${esc(s?.nome||'')}" placeholder="ex.: reinicia-agente" /></div>
         <div class="field"><label>Tipo</label>
@@ -693,7 +944,7 @@
             <option value="arquivo" ${s?.tipo!=='template'?'selected':''}>Arquivo (.sh no volume)</option>
             <option value="template" ${s?.tipo==='template'?'selected':''}>Template</option>
           </select></div>
-        <div class="field" id="campo-arquivo"><label>Arquivo (.sh) *</label><input id="sc-caminho" value="${esc(s?.caminho||'')}" placeholder="cleanup_logs.sh" class="mono" /></div>
+        <div class="field" id="campo-arquivo"><label>Arquivo (.sh) *</label><input id="sc-caminho" value="${esc(s?.caminho||'')}" placeholder="cleanup_logs.sh" class="mono" />${codeBtn}</div>
         <div class="field" id="campo-template"><label>Template *</label>
           <textarea id="sc-template" rows="3" class="mono" placeholder="docker restart {{container:agent}}">${esc(s?.template||'')}</textarea>
           <div class="muted" style="font-size:11px">Placeholders: {{slug}} {{container:db|odoo|agent}} {{db}} {{logdir}} {{param:nome:int|slug}}</div></div>
@@ -701,27 +952,140 @@
         <div class="field"><label>Descrição curta</label><input id="sc-desc" value="${esc(s?.descricao||'')}" /></div>
         <div class="field"><label>Categoria</label>
           <select id="sc-cat">${["cleanup","backup","update","status","provision","other"].map(c=>`<option ${s?.categoria===c?'selected':''}>${c}</option>`).join("")}</select></div>
+        <div class="field"><label>Parâmetros</label>
+          <div id="param-list"></div>
+          <button class="btn ghost sm" type="button" onclick="addParam()" style="margin-top:8px">+ parâmetro</button></div>
         <div class="field" style="display:flex;align-items:center;gap:8px"><label style="margin:0">Ativo</label>
           <label class="switch"><input id="sc-ativo" type="checkbox" ${s?(s.ativo?'checked':''):'checked'}><span class="slider"></span></label></div>
       `, [
         { label: "Cancelar", cls: "ghost", act: closeModal },
         { label: s ? "Salvar" : "Cadastrar", cls: "", act: () => saveScript(id) },
       ]);
+      const m = document.querySelector(".modal"); if (m) m.style.maxWidth = "780px";
       toggleTipoCampos();
+      renderParams();
     }
     function toggleTipoCampos() {
       const t = $("sc-tipo").value;
       $("campo-arquivo").style.display = t === "arquivo" ? "" : "none";
       $("campo-template").style.display = t === "template" ? "" : "none";
     }
+
+    /* ---- editor de parametros estruturados (cards colapsaveis) ---- */
+    const PARAM_TIPOS = ["text", "int", "select", "bool"];
+    let editOpen = -1;  // indice do parametro expandido (-1 = nenhum)
+    const _ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    const _ICON_UP = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>';
+    const _ICON_DOWN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+    const _ICON_DRAG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>';
+    function addParam() { editParams.push({ nome: "", tipo: "text", arg: "", default: "", obrigatorio: false, secret: false, choices: [] }); editOpen = editParams.length - 1; renderParams(); }
+    function removeParam(i) { editParams.splice(i, 1); if (editOpen >= editParams.length) editOpen = -1; renderParams(); }
+    function moveParam(i, d) { const j = i + d; if (j < 0 || j >= editParams.length) return; [editParams[i], editParams[j]] = [editParams[j], editParams[i]]; if (editOpen === i) editOpen = j; else if (editOpen === j) editOpen = i; renderParams(); }
+    function toggleParamOpen(i) { editOpen = (editOpen === i) ? -1 : i; renderParams(); }
+    function setParam(i, f, v, re) { editParams[i][f] = v; if (re) renderParams(); }
+    function _paramBody(p, i) {
+      const camposTipo =
+        p.tipo === "int"
+          ? `<label>Mínimo<input type="number" value="${p.minimo??''}" onchange="setParam(${i},'minimo',this.value===''?null:parseInt(this.value,10))"></label>
+             <label>Máximo<input type="number" value="${p.maximo??''}" onchange="setParam(${i},'maximo',this.value===''?null:parseInt(this.value,10))"></label>`
+          : p.tipo === "select"
+          ? `<label class="full">Opções (separadas por vírgula)<input value="${esc((p.choices||[]).join(', '))}" placeholder="status, restart, stop" onchange="setParam(${i},'choices',this.value.split(',').map(x=>x.trim()).filter(Boolean))"></label>`
+          : "";
+      const semValor = p.tipo === "bool"
+        ? `<label class="chk"><input type="checkbox" ${p.sem_valor?'checked':''} onchange="setParam(${i},'sem_valor',this.checked)"> Flag sem valor</label>`
+        : `<span></span>`;
+      return `
+        <div class="param-body">
+          <div class="pform">
+            <label>Nome<input value="${esc(p.nome||'')}" placeholder="ex.: linhas" onchange="setParam(${i},'nome',this.value)"></label>
+            <label class="chk"><input type="checkbox" ${p.obrigatorio?'checked':''} onchange="setParam(${i},'obrigatorio',this.checked)"> Obrigatório</label>
+            <label class="chk"><input type="checkbox" ${p.secret?'checked':''} onchange="setParam(${i},'secret',this.checked)"> Secret</label>
+
+            <label>Arg<input value="${esc(p.arg||'')}" placeholder="--flag (vazio = posicional)" onchange="setParam(${i},'arg',this.value)"></label>
+            ${semValor}
+            <label>Tipo<select onchange="setParam(${i},'tipo',this.value,true)">${PARAM_TIPOS.map(t=>`<option ${p.tipo===t?'selected':''}>${t}</option>`).join("")}</select></label>
+
+            <label>Variável de ambiente<input value="${esc(p.env||'')}" placeholder="ISY_X (injeta no env)" onchange="setParam(${i},'env',this.value)"></label>
+            <label>Valor padrão<input value="${esc(p.default||'')}" onchange="setParam(${i},'default',this.value)"></label>
+            <label>Constante (valor fixo)<input value="${esc(p.constante||'')}" placeholder="ignora input" onchange="setParam(${i},'constante',this.value)"></label>
+
+            <label class="full">Rótulo / descrição<input value="${esc(p.rotulo||'')}" placeholder="texto exibido na execução" onchange="setParam(${i},'rotulo',this.value)"></label>
+            ${camposTipo}
+          </div>
+        </div>`;
+    }
+    function renderParams() {
+      const box = $("param-list"); if (!box) return;
+      box.innerHTML = editParams.map((p, i) => {
+        const open = editOpen === i;
+        return `
+        <div class="param-card ${open?'open':''}">
+          <div class="param-head" onclick="toggleParamOpen(${i})">
+            <span class="drag">${_ICON_DRAG}</span>
+            <strong>${esc(p.nome || "novo parâmetro")}</strong>
+            ${p.obrigatorio ? '<span class="req-dot" title="obrigatório"></span>' : ''}
+            <span class="ptype">${esc(p.tipo)}</span>
+            <span class="param-actions" onclick="event.stopPropagation()">
+              <button type="button" class="del" onclick="removeParam(${i})" title="remover">${_ICON_TRASH}</button>
+              <button type="button" onclick="moveParam(${i},-1)" title="subir">${_ICON_UP}</button>
+              <button type="button" onclick="moveParam(${i},1)" title="descer">${_ICON_DOWN}</button>
+            </span>
+          </div>
+          ${open ? _paramBody(p, i) : ""}
+        </div>`;
+      }).join("") || `<div class="muted" style="font-size:12px">Nenhum parâmetro. Use "+ parâmetro" para adicionar.</div>`;
+    }
+
+    /* ---- editor de codigo inline (Modulo 2) ---- */
+    async function openCodeEditor(id) {
+      try {
+        const { data } = await api(`/api/v1/admin/scripts/${id}/source`);
+        const syntax = data.caminho.endsWith(".py") ? "python" : "bash";
+        modal(`Editar código — ${esc(data.caminho)}`, `
+          <div class="code-top">
+            <label class="radio"><input type="radio" name="src-mode" checked> Editar código</label>
+            <label class="radio"><input type="radio" name="src-mode" onclick="document.getElementById('src-upload').click(); return true" > Enviar arquivo</label>
+            <input id="src-upload" type="file" accept=".sh,.py,text/*" style="display:none" onchange="uploadCode(this)">
+            <div class="syntax">Syntax <select><option ${syntax==='bash'?'selected':''}>bash</option><option ${syntax==='python'?'selected':''}>python</option></select></div>
+          </div>
+          <div class="code-wrap"><div class="code-gutter" id="code-gutter">1</div><textarea id="code-src" spellcheck="false" oninput="syncGutter()" onscroll="document.getElementById('code-gutter').scrollTop=this.scrollTop">${esc(data.conteudo)}</textarea></div>
+          <div class="muted" style="font-size:11px;margin-top:8px">Grava em <span class="mono">${esc(data.caminho)}</span> no servidor (requer ISY_SCRIPT_EDIT_ENABLED).</div>
+        `, [
+          { label: "Cancelar", cls: "ghost", act: () => openScript(id) },
+          { label: "Salvar código", cls: "", act: () => saveCode(id) },
+        ]);
+        const m = document.querySelector(".modal"); if (m) m.style.maxWidth = "880px";
+        syncGutter();
+      } catch (e) { toast(e.message, "err"); }
+    }
+    function syncGutter() {
+      const ta = $("code-src"); if (!ta) return;
+      const n = ta.value.split("\n").length;
+      $("code-gutter").textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
+    }
+    function uploadCode(input) {
+      const f = input.files && input.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { $("code-src").value = r.result; syncGutter(); };
+      r.readAsText(f);
+    }
+    async function saveCode(id) {
+      try {
+        await api(`/api/v1/admin/scripts/${id}/source`, { method: "PUT", body: JSON.stringify({ conteudo: $("code-src").value }) });
+        toast("Código salvo", "ok"); openScript(id);
+      } catch (e) { toast(e.message, "err"); }
+    }
+
     async function saveScript(id) {
       const tipo = $("sc-tipo").value;
+      const param_schema = editParams.filter(p => (p.nome || "").trim());
       const body = {
         nome: $("sc-nome").value.trim(), tipo,
         caminho: tipo === "arquivo" ? $("sc-caminho").value.trim() : "",
         template: tipo === "template" ? $("sc-template").value.trim() : null,
         descricao: $("sc-desc").value.trim(),
         categoria: $("sc-cat").value, ativo: $("sc-ativo").checked,
+        param_schema,
       };
       if (!id) { const dono = $("sc-dono").value; if (dono) body.tenant_id = parseInt(dono, 10); }
       if (!body.nome || (tipo === "arquivo" && !body.caminho) || (tipo === "template" && !body.template)) {
@@ -736,6 +1100,92 @@
     async function toggleScript(id, ativo) {
       try { await api(`/api/v1/admin/scripts/${id}`, { method: "PUT", body: JSON.stringify({ ativo }) }); toast("Status atualizado", "ok"); }
       catch (e) { toast(e.message, "err"); loadScripts(); }
+    }
+
+    /* ---- AGENDAMENTOS ---- */
+    const DIAS_SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+    function cronLabel(expr) {
+      const p = String(expr || "").trim().split(/\s+/);
+      if (p.length !== 5) return esc(expr);
+      const [mi, ho, dom, mon, dow] = p;
+      if (expr.trim() === "* * * * *") return "a cada minuto";
+      if (mi === "0" && ho === "*" && dom === "*" && mon === "*" && dow === "*") return "a cada hora";
+      const hhmm = (h, m) => `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+      const num = (x) => /^\d+$/.test(x);
+      if (dom === "*" && mon === "*" && dow === "*" && num(mi) && num(ho)) return `diariamente ${hhmm(ho, mi)}`;
+      if (dom === "*" && mon === "*" && num(dow) && num(mi) && num(ho)) return `${DIAS_SEMANA[+dow] || dow} ${hhmm(ho, mi)}`;
+      return esc(expr);
+    }
+    async function loadAgendamentos() {
+      if (!state.tenantsMeta.length) { try { const { data } = await api("/api/v1/admin/tenants"); state.tenantsMeta = data; } catch (_) {} }
+      if (!state.scripts.length) { try { const { data } = await api("/api/v1/admin/scripts"); state.scripts = data; } catch (_) {} }
+      try {
+        const { data } = await api("/api/v1/admin/schedules"); setConn(true);
+        $("sched-body").innerHTML = data.map(s => `
+          <tr>
+            <td><strong>${esc(s.tenant_nome || s.tenant_slug || ("#" + s.tenant_id))}</strong></td>
+            <td>${esc(s.script_nome || ("#" + s.script_id))}${s.parametros ? ` <span class="muted mono" style="font-size:11px">${esc(s.parametros)}</span>` : ""}</td>
+            <td class="mono" style="font-size:12px" title="${esc(s.cron_expr)}">${cronLabel(s.cron_expr)}</td>
+            <td class="muted">${s.ultima_exec ? esc(String(s.ultima_exec).replace("T", " ").slice(0, 19)) : "—"}</td>
+            <td><label class="switch"><input type="checkbox" ${s.ativo ? "checked" : ""} onchange="toggleSchedule(${s.id}, '${esc(s.tenant_slug)}', this.checked)"><span class="slider"></span></label></td>
+            <td><button class="btn ghost sm" onclick="deleteSchedule(${s.id}, '${esc(s.tenant_slug)}')">remover</button></td>
+          </tr>`).join("") || `<tr><td colspan="6" class="empty">Nenhum agendamento. Crie o primeiro para ativar o piloto automático.</td></tr>`;
+      } catch (e) { setConn(false); $("sched-body").innerHTML = `<tr><td colspan="6" class="empty">${esc(e.message)}</td></tr>`; }
+    }
+    function openSchedule() {
+      if (!state.tenantsMeta.length || !state.scripts.length) { loadAgendamentos(); }
+      const tenantsOpts = state.tenantsMeta.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)}</option>`).join("");
+      const scriptsOpts = state.scripts.filter(s => s.ativo).map(s => `<option value="${s.id}">${esc(s.nome)}</option>`).join("");
+      const dowOpts = [1, 2, 3, 4, 5, 6, 0].map(d => `<option value="${d}">${DIAS_SEMANA[d][0].toUpperCase() + DIAS_SEMANA[d].slice(1)}</option>`).join("");
+      modal("Novo agendamento", `
+        <div class="field"><label>Cliente *</label><select id="ag-cliente">${tenantsOpts}</select></div>
+        <div class="field"><label>Script *</label><select id="ag-script">${scriptsOpts}</select></div>
+        <div class="field"><label>Frequência</label>
+          <select id="ag-preset" onchange="agToggleCampos()">
+            <option value="hora">A cada hora</option>
+            <option value="dia">Diariamente</option>
+            <option value="semana">Semanalmente</option>
+            <option value="minuto">A cada minuto</option>
+          </select></div>
+        <div class="field" id="ag-campo-dow" style="display:none"><label>Dia da semana</label><select id="ag-dow">${dowOpts}</select></div>
+        <div class="field" id="ag-campo-hora" style="display:none"><label>Horário (UTC)</label><input id="ag-hora" type="time" value="03:00" /></div>
+        <div class="field"><label>Parâmetros (opcional)</label><input id="ag-params" class="mono" placeholder="ex.: 30" /></div>
+      `, [
+        { label: "Cancelar", cls: "ghost", act: closeModal },
+        { label: "Agendar", cls: "", act: saveSchedule },
+      ]);
+      agToggleCampos();
+    }
+    function agToggleCampos() {
+      const p = $("ag-preset").value;
+      $("ag-campo-hora").style.display = (p === "dia" || p === "semana") ? "" : "none";
+      $("ag-campo-dow").style.display = (p === "semana") ? "" : "none";
+    }
+    function agBuildCron() {
+      const p = $("ag-preset").value;
+      if (p === "minuto") return "* * * * *";
+      if (p === "hora") return "0 * * * *";
+      const [hh, mm] = ($("ag-hora").value || "03:00").split(":").map(x => parseInt(x, 10));
+      if (p === "dia") return `${mm} ${hh} * * *`;
+      return `${mm} ${hh} * * ${$("ag-dow").value}`;
+    }
+    async function saveSchedule() {
+      const slug = $("ag-cliente").value, scriptId = parseInt($("ag-script").value, 10);
+      if (!slug || !scriptId) { toast("Selecione cliente e script", "err"); return; }
+      const body = { script_id: scriptId, cron_expr: agBuildCron(), parametros: $("ag-params").value.trim(), ativo: true };
+      try {
+        await api(`/api/v1/tenants/${slug}/schedules`, { method: "POST", body: JSON.stringify(body) });
+        closeModal(); toast("Agendamento criado", "ok"); loadAgendamentos();
+      } catch (e) { toast(e.message, "err"); }
+    }
+    async function toggleSchedule(id, slug, ativo) {
+      try { await api(`/api/v1/tenants/${slug}/schedules/${id}`, { method: "PUT", body: JSON.stringify({ ativo }) }); toast("Agendamento atualizado", "ok"); }
+      catch (e) { toast(e.message, "err"); loadAgendamentos(); }
+    }
+    async function deleteSchedule(id, slug) {
+      if (!confirm("Remover este agendamento?")) return;
+      try { await api(`/api/v1/tenants/${slug}/schedules/${id}`, { method: "DELETE" }); toast("Agendamento removido", "ok"); loadAgendamentos(); }
+      catch (e) { toast(e.message, "err"); }
     }
 
     /* ---- TOKEN ---- */
@@ -777,7 +1227,7 @@
         <tr>
           <td class="mono" style="font-size:12px">${esc((l.ocorrido_em||'').replace('T',' ').slice(0,19))}</td>
           <td>${esc(l._nome)}</td>
-          <td>${esc(l.script_nome||l.tipo)}</td>
+          <td>${esc(l.script_nome||l.tipo)}${l.origem==='agendamento' ? ' <span class="badge gold" style="font-size:10px">agendado</span>' : ''}</td>
           <td class="muted mono" style="font-size:12px">${esc(l.parametros||'—')}</td>
           <td><span class="badge ${l.status==='sucesso'?'ok':l.status==='falha'?'fail':'neutral'}">${esc(l.status||'—')}</span></td>
           <td class="muted">${l.exit_code ?? '—'}</td>

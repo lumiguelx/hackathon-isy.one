@@ -10,13 +10,16 @@ from app.core.security import verify_admin
 from app.repositories import (
     config_repo,
     events_repo,
+    schedules_repo,
     scripts_repo,
     tenant_scripts_repo,
     tenants_repo,
 )
 from app.schemas import (
+    ScheduleOut,
     ScriptCreate,
     ScriptOut,
+    ScriptSource,
     ScriptUpdate,
     TenantCreate,
     TenantOut,
@@ -114,6 +117,36 @@ def update_script(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
 
+@router.get("/scripts/{script_id}/source", summary="Ler codigo do script")
+def get_script_source(script_id: int, db: Session = Depends(get_db)) -> dict:
+    """Le o codigo do .sh/.py do script para o editor inline."""
+    script = scripts_repo.get(db, script_id)
+    if script is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Script nao encontrado.")
+    try:
+        conteudo = script_service.read_source(script)
+    except script_service.ScriptValidationError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    return ok({"caminho": script.caminho, "conteudo": conteudo})
+
+
+@router.put("/scripts/{script_id}/source", summary="Gravar codigo do script")
+def put_script_source(
+    script_id: int, body: ScriptSource, db: Session = Depends(get_db)
+) -> dict:
+    """Grava o codigo do script no diretorio de scripts (atras de flag, path-guarded)."""
+    script = scripts_repo.get(db, script_id)
+    if script is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Script nao encontrado.")
+    try:
+        script_service.write_source(script, body.conteudo)
+    except script_service.ScriptEditDisabled as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
+    except script_service.ScriptValidationError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    return ok(message="Codigo salvo.")
+
+
 @router.put("/tenants/{slug}/scripts", summary="Vincular script a um cliente")
 def bind_script(
     slug: str, body: TenantScriptBinding, db: Session = Depends(get_db)
@@ -164,3 +197,20 @@ def dashboard(db: Session = Depends(get_db)) -> dict:
     """Calcula e retorna a saude de toda a frota de clientes para o dashboard."""
     saudes = [health_service.calcular_saude(db, t) for t in tenants_repo.list_all(db)]
     return ok(saudes)
+
+
+@router.get("/schedules", summary="Listar agendamentos de todos os clientes")
+def list_schedules(db: Session = Depends(get_db)) -> dict:
+    """Lista os agendamentos de toda a frota, com nome do cliente e do script."""
+    tenants = {t.id: t for t in tenants_repo.list_all(db)}
+    scripts = {s.id: s for s in scripts_repo.list_all(db)}
+    data = []
+    for s in schedules_repo.list_all(db):
+        out = ScheduleOut.model_validate(s).model_dump(mode="json")
+        tenant = tenants.get(s.tenant_id)
+        script = scripts.get(s.script_id)
+        out["tenant_nome"] = tenant.nome if tenant else None
+        out["tenant_slug"] = tenant.slug if tenant else None
+        out["script_nome"] = script.nome if script else None
+        data.append(out)
+    return ok(data)

@@ -30,6 +30,8 @@ class Script(Base):
     tipo: Mapped[str] = mapped_column(String(20), default="arquivo")
     template: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     parametros: Mapped[str] = mapped_column(String(255), default="")
+    # Parametros estruturados (lista de ParamSpec): tipo, arg, faixa, choices, etc.
+    param_schema: Mapped[list] = mapped_column(JSON, default=list)
     descricao: Mapped[str] = mapped_column(String(255), default="")
     categoria: Mapped[str] = mapped_column(String(20), default="other")
     tenant_id: Mapped[int | None] = mapped_column(
@@ -82,6 +84,23 @@ class TenantScript(Base):
     script_id: Mapped[int] = mapped_column(ForeignKey("scripts.id"))
     parametros_default: Mapped[str] = mapped_column(String(255), default="")
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Schedule(Base):
+    __tablename__ = "schedules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"))
+    script_id: Mapped[int] = mapped_column(ForeignKey("scripts.id"))
+    # Cron de 5 campos (min hora dia mes diasem), avaliado por app.services.cron.
+    cron_expr: Mapped[str] = mapped_column(String(100))
+    parametros: Mapped[str] = mapped_column(String(255), default="")
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Ultimo disparo: evita repetir a execucao no mesmo minuto.
+    ultima_exec: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class Config(Base):
