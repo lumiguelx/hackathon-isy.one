@@ -1273,20 +1273,26 @@
       } catch (_) {}
     }
 
-    /* Popula o seletor de cliente da frota: "Todos" + um item por tenant (slug). */
+    /* Clientes com containers Docker reais monitorados pela frota (slug = prefixo
+       dos containers `isyone-<slug>-*`). O nome e apenas o rotulo exibido. */
+    const FROTA_CLIENTES = [
+      { slug: "tux-burger", nome: "Tux Burger" },
+      { slug: "teste", nome: "Komi Aki" },
+    ];
+
+    /* Popula o seletor da frota com os clientes reais (nao com todos os tenants). */
     function populateFrotaSelect() {
       const sel = $("frota-cliente");
       if (!sel) return;
       const atual = sel.value;
-      sel.innerHTML = `<option value=".*">Todos os clientes</option>`
-        + state.tenants.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)}</option>`).join("");
-      if (atual) sel.value = atual;
+      sel.innerHTML = FROTA_CLIENTES.map(c => `<option value="${esc(c.slug)}">${esc(c.nome)}</option>`).join("");
+      if (atual && FROTA_CLIENTES.some(c => c.slug === atual)) sel.value = atual;
     }
 
     /* Monta a URL embutida do Grafana com o filtro de cliente selecionado. */
     function renderFrota() {
       if (!state.grafana) return;
-      const cliente = ($("frota-cliente") || {}).value || ".*";
+      const cliente = ($("frota-cliente") || {}).value || FROTA_CLIENTES[0].slug;
       $("grafana-frame").src = `${state.grafana}/d/isyone-fleet?kiosk&refresh=10s&theme=light&var-cliente=${encodeURIComponent(cliente)}`;
     }
 
