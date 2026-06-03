@@ -10,11 +10,13 @@ from app.core.security import verify_admin
 from app.repositories import (
     config_repo,
     events_repo,
+    schedules_repo,
     scripts_repo,
     tenant_scripts_repo,
     tenants_repo,
 )
 from app.schemas import (
+    ScheduleOut,
     ScriptCreate,
     ScriptOut,
     ScriptSource,
@@ -195,3 +197,20 @@ def dashboard(db: Session = Depends(get_db)) -> dict:
     """Calcula e retorna a saude de toda a frota de clientes para o dashboard."""
     saudes = [health_service.calcular_saude(db, t) for t in tenants_repo.list_all(db)]
     return ok(saudes)
+
+
+@router.get("/schedules", summary="Listar agendamentos de todos os clientes")
+def list_schedules(db: Session = Depends(get_db)) -> dict:
+    """Lista os agendamentos de toda a frota, com nome do cliente e do script."""
+    tenants = {t.id: t for t in tenants_repo.list_all(db)}
+    scripts = {s.id: s for s in scripts_repo.list_all(db)}
+    data = []
+    for s in schedules_repo.list_all(db):
+        out = ScheduleOut.model_validate(s).model_dump(mode="json")
+        tenant = tenants.get(s.tenant_id)
+        script = scripts.get(s.script_id)
+        out["tenant_nome"] = tenant.nome if tenant else None
+        out["tenant_slug"] = tenant.slug if tenant else None
+        out["script_nome"] = script.nome if script else None
+        data.append(out)
+    return ok(data)

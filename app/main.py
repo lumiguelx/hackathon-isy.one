@@ -1,5 +1,6 @@
 """Isy.One Shell Automation API — ponto de entrada do FastAPI."""
 
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from app.core.config import settings
 from app.core.db import SessionLocal, init_db
 from app.core.seed import seed_demo
 from app.routes import admin, health, registro, tenants
+from app.services import scheduler
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -21,7 +23,23 @@ async def lifespan(app: FastAPI):
     if settings.seed_demo:
         with SessionLocal() as db:
             seed_demo(db)
-    yield
+    # Agendador: thread daemon que dispara execucoes cron a cada minuto.
+    stop_event = threading.Event()
+    thread: threading.Thread | None = None
+    if settings.scheduler_enabled:
+        thread = threading.Thread(
+            target=scheduler.run_loop,
+            args=(stop_event,),
+            name="isyone-scheduler",
+            daemon=True,
+        )
+        thread.start()
+    try:
+        yield
+    finally:
+        stop_event.set()
+        if thread is not None:
+            thread.join(timeout=2)
 
 
 _DESCRIPTION = """

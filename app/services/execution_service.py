@@ -66,6 +66,7 @@ def _record(
     exit_code: int | None,
     duracao_ms: int,
     audit_params: str | None = None,
+    origem: str = "manual",
 ) -> Event:
     payload = {
         "script_nome": script.nome,
@@ -76,6 +77,7 @@ def _record(
         "stdout": stdout[: settings.output_limit],
         "stderr": stderr[: settings.output_limit],
         "duracao_ms": duracao_ms,
+        "origem": origem,
     }
     event = events_repo.append(
         db, ev.EXECUTION_COMPLETED, payload, tenant_id=tenant.id, script_id=script.id
@@ -110,6 +112,7 @@ def run(
     tenant: Tenant,
     script: Script,
     parametros: list[str],
+    origem: str = "manual",
     valores: dict | None = None,
 ) -> Event:
     if script.tipo == "template":
@@ -127,7 +130,8 @@ def run(
             )
         duracao_ms = int((time.perf_counter() - started) * 1000)
         return _record(
-            db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms
+            db, tenant, script, parametros, status, stdout, stderr, exit_code,
+            duracao_ms, origem=origem,
         )
 
     try:
@@ -173,7 +177,7 @@ def run(
         stdout, stderr = "", f"Tempo limite de {settings.exec_timeout}s excedido."
     return _record(
         db, tenant, script, parametros, status, stdout, stderr, exit_code,
-        duracao_ms, audit_params,
+        duracao_ms, audit_params=audit_params, origem=origem,
     )
 
 

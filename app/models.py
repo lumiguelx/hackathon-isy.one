@@ -86,6 +86,23 @@ class TenantScript(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class Schedule(Base):
+    __tablename__ = "schedules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"))
+    script_id: Mapped[int] = mapped_column(ForeignKey("scripts.id"))
+    # Cron de 5 campos (min hora dia mes diasem), avaliado por app.services.cron.
+    cron_expr: Mapped[str] = mapped_column(String(100))
+    parametros: Mapped[str] = mapped_column(String(255), default="")
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Ultimo disparo: evita repetir a execucao no mesmo minuto.
+    ultima_exec: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class Config(Base):
     __tablename__ = "config"
 

@@ -1,9 +1,10 @@
 """Acesso a tabela scripts."""
 
+from sqlalchemy import delete as sa_delete
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Script
+from app.models import Schedule, Script
 from app.schemas import ScriptCreate, ScriptUpdate
 
 
@@ -47,5 +48,7 @@ def update(db: Session, script: Script, data: ScriptUpdate) -> Script:
 
 
 def delete(db: Session, script: Script) -> None:
+    # Remove agendamentos que apontam para este script (FK sem ON DELETE CASCADE).
+    db.execute(sa_delete(Schedule).where(Schedule.script_id == script.id))
     db.delete(script)
     db.commit()

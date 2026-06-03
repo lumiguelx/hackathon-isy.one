@@ -175,3 +175,54 @@ class TenantScriptOut(BaseModel):
     script_id: int
     parametros_default: str
     ativo: bool
+
+
+def _validar_cron(expr: str) -> None:
+    # Import local para evitar acoplar o carregamento dos schemas ao pacote services.
+    from app.services import cron
+
+    try:
+        cron.validate(expr)
+    except ValueError as exc:
+        raise ValueError(f"cron invalido: {exc}") from exc
+
+
+class ScheduleCreate(BaseModel):
+    script_id: int
+    cron_expr: str = Field(min_length=1, max_length=100)
+    parametros: str = Field(default="", max_length=255)
+    ativo: bool = True
+
+    @model_validator(mode="after")
+    def _cron_valido(self) -> "ScheduleCreate":
+        _validar_cron(self.cron_expr)
+        return self
+
+
+class ScheduleUpdate(BaseModel):
+    cron_expr: str | None = Field(default=None, max_length=100)
+    parametros: str | None = Field(default=None, max_length=255)
+    ativo: bool | None = None
+
+    @model_validator(mode="after")
+    def _cron_valido(self) -> "ScheduleUpdate":
+        if self.cron_expr is not None:
+            _validar_cron(self.cron_expr)
+        return self
+
+
+class ScheduleOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tenant_id: int
+    script_id: int
+    cron_expr: str
+    parametros: str
+    ativo: bool
+    ultima_exec: datetime | None
+    criado_em: datetime
+    # Enriquecidos na rota admin para a tabela do console (None na rota por cliente).
+    script_nome: str | None = None
+    tenant_nome: str | None = None
+    tenant_slug: str | None = None

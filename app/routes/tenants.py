@@ -7,8 +7,13 @@ from app.core.db import get_db
 from app.core.responses import ok
 from app.core.security import verify_tenant
 from app.models import Tenant
-from app.repositories import events_repo, scripts_repo, tenant_scripts_repo
-from app.schemas import RunRequest
+from app.repositories import (
+    events_repo,
+    schedules_repo,
+    scripts_repo,
+    tenant_scripts_repo,
+)
+from app.schemas import RunRequest, ScheduleCreate, ScheduleOut, ScheduleUpdate
 from app.services import execution_service, health_service, template_service
 
 router = APIRouter(prefix="/api/v1/tenants/{slug}", tags=["Cliente"])
@@ -104,3 +109,66 @@ def health(
 ) -> dict:
     """Retorna as metricas de saude da frota daquele cliente."""
     return ok(health_service.calcular_saude(db, tenant))
+
+
+@router.get("/schedules", summary="Agendamentos do cliente")
+def list_schedules(
+    tenant: Tenant = Depends(verify_tenant), db: Session = Depends(get_db)
+) -> dict:
+    """Lista os agendamentos (cron) configurados para o cliente."""
+    data = [
+        ScheduleOut.model_validate(s).model_dump(mode="json")
+        for s in schedules_repo.list_by_tenant(db, tenant.id)
+    ]
+    return ok(data)
+
+
+@router.post("/schedules", status_code=status.HTTP_201_CREATED, summary="Criar agendamento")
+def create_schedule(
+    body: ScheduleCreate,
+    tenant: Tenant = Depends(verify_tenant),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Agenda a execucao automatica de um script liberado para o cliente."""
+    binding = tenant_scripts_repo.get(db, tenant.id, body.script_id)
+    if binding is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, "Script nao disponivel para este cliente."
+        )
+    schedule = schedules_repo.create(db, tenant.id, body)
+    return ok(
+        ScheduleOut.model_validate(schedule).model_dump(mode="json"),
+        "Agendamento criado.",
+    )
+
+
+@router.put("/schedules/{schedule_id}", summary="Atualizar agendamento")
+def update_schedule(
+    schedule_id: int,
+    body: ScheduleUpdate,
+    tenant: Tenant = Depends(verify_tenant),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Atualiza um agendamento do cliente (horario, parametros ou ativo)."""
+    schedule = schedules_repo.get(db, schedule_id)
+    if schedule is None or schedule.tenant_id != tenant.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Agendamento nao encontrado.")
+    schedule = schedules_repo.update(db, schedule, body)
+    return ok(
+        ScheduleOut.model_validate(schedule).model_dump(mode="json"),
+        "Agendamento atualizado.",
+    )
+
+
+@router.delete("/schedules/{schedule_id}", summary="Remover agendamento")
+def delete_schedule(
+    schedule_id: int,
+    tenant: Tenant = Depends(verify_tenant),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Remove um agendamento do cliente."""
+    schedule = schedules_repo.get(db, schedule_id)
+    if schedule is None or schedule.tenant_id != tenant.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Agendamento nao encontrado.")
+    schedules_repo.delete(db, schedule)
+    return ok(message="Agendamento removido.")
