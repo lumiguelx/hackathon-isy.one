@@ -24,7 +24,7 @@ from app.repositories import (
     tenants_repo,
 )
 from app.schemas import RegistroRequest, TenantCreate
-from app.services import alert_service, execution_service
+from app.services import execution_service, notifications
 
 router = APIRouter(tags=["Self-service"])
 
@@ -133,8 +133,8 @@ def registro(
                     tenant_id=tenant_id,
                     script_id=script_id,
                 )
-                if payload.get("status") == "falha":
-                    alert_service.notify_failure(slug, payload)
+                if t is not None:
+                    notifications.notify_execution(db2, t, payload, origem="registro")
         except execution_service.ScriptNotExecutable as exc:
             yield _sse("log", {"line": f"ERRO: {exc}"})
         yield _sse(

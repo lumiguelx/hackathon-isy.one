@@ -28,7 +28,13 @@ from app.schemas import (
     TenantUpdate,
     TokenUpdate,
 )
-from app.services import execution_service, health_service, script_service, template_service
+from app.services import (
+    execution_service,
+    health_service,
+    notifications,
+    script_service,
+    template_service,
+)
 
 router = APIRouter(
     prefix="/api/v1/admin", tags=["Administracao"], dependencies=[Depends(verify_admin)]
@@ -190,6 +196,20 @@ def rotate_tenant_token(
     tenants_repo.set_token(db, tenant, body.token)
     events_repo.append(db, ev.TOKEN_ROTATED, {"alvo": slug}, tenant_id=tenant.id)
     return ok(message="Token do cliente rotacionado.")
+
+
+@router.post("/tenants/{slug}/test-alert", summary="Enviar notificacao de teste")
+def test_alert(slug: str, db: Session = Depends(get_db)) -> dict:
+    """Dispara uma notificacao de teste para o webhook do cliente (ou o global)."""
+    tenant = tenants_repo.get_by_slug(db, slug)
+    if tenant is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
+    if not notifications.send_test(tenant):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Nenhum webhook configurado (nem no cliente, nem global).",
+        )
+    return ok(message="Notificacao de teste enviada.")
 
 
 @router.get("/tenants/health", summary="Dashboard de saude da frota")
