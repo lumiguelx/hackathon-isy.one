@@ -1,5 +1,7 @@
 """Rotas por cliente: scripts disponiveis, execucao, auditoria e saude."""
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -14,7 +16,15 @@ from app.repositories import (
     tenant_scripts_repo,
 )
 from app.schemas import RunRequest, ScheduleCreate, ScheduleOut, ScheduleUpdate
-from app.services import execution_service, health_service, template_service
+from app.services import cron, execution_service, health_service, template_service
+
+
+def _schedule_out(s) -> dict:
+    """Serializa o agendamento e anexa a proxima execucao calculada do cron."""
+    out = ScheduleOut.model_validate(s).model_dump(mode="json")
+    prox = cron.next_run(s.cron_expr, datetime.now(timezone.utc)) if s.ativo else None
+    out["proxima"] = prox.isoformat() if prox else None
+    return out
 
 router = APIRouter(prefix="/api/v1/tenants/{slug}", tags=["Cliente"])
 
@@ -115,11 +125,8 @@ def health(
 def list_schedules(
     tenant: Tenant = Depends(verify_tenant), db: Session = Depends(get_db)
 ) -> dict:
-    """Lista os agendamentos (cron) configurados para o cliente."""
-    data = [
-        ScheduleOut.model_validate(s).model_dump(mode="json")
-        for s in schedules_repo.list_by_tenant(db, tenant.id)
-    ]
+    """Lista os agendamentos (cron) configurados para o cliente, com a proxima execucao."""
+    data = [_schedule_out(s) for s in schedules_repo.list_by_tenant(db, tenant.id)]
     return ok(data)
 
 

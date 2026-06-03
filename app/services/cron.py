@@ -8,7 +8,7 @@ classico do cron). Os presets da UI restringem no maximo um dos dois, entao o AN
 suficiente e mais previsivel.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Faixa valida (lo, hi) de cada campo, na ordem do cron.
 _RANGES = [(0, 59), (0, 23), (1, 31), (1, 12), (0, 6)]
@@ -67,3 +67,13 @@ def matches(expr: str, dt: datetime) -> bool:
         and dt.month in mes
         and cron_dow in diasem
     )
+
+
+def next_run(expr: str, after: datetime) -> datetime | None:
+    """Proximo minuto (> after) em que o cron casa; None se nada em ~1 ano."""
+    dt = (after + timedelta(minutes=1)).replace(second=0, microsecond=0)
+    for _ in range(366 * 24 * 60):
+        if matches(expr, dt):
+            return dt
+        dt += timedelta(minutes=1)
+    return None

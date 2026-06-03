@@ -194,6 +194,13 @@
     .pform input, .pform select { padding: 8px 10px; font-size: 13px; }
     .pform label.chk input { width: auto; }
     .exec-row label.chk { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-2); }
+    .exec-item { margin-bottom: 9px; }
+    .exec-item .exec-row { margin-bottom: 4px; }
+    .sched-tag { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 500; color: #8a6a00;
+      background: var(--gold-soft); border: 1px solid #f3dca0; border-radius: 999px; padding: 4px 12px; margin-left: 2px; width: fit-content; max-width: 100%; }
+    .sched-tag svg { flex-shrink: 0; }
+    .sched-tag .sched-x { margin-left: 8px; background: none; border: 0; color: #8a6a00; cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0; }
+    .sched-tag .sched-x:hover { color: var(--red); }
     /* editor de codigo */
     .code-top { display: flex; align-items: center; gap: 18px; margin-bottom: 12px; flex-wrap: wrap; }
     .code-top .radio { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); cursor: pointer; }
@@ -684,23 +691,93 @@
       $("dr-out").textContent = "—";
       $("drawer").classList.add("show");
       try {
-        const { data } = await api(`/api/v1/tenants/${slug}/scripts`);
+        const [{ data }, sch] = await Promise.all([
+          api(`/api/v1/tenants/${slug}/scripts`),
+          api(`/api/v1/tenants/${slug}/schedules`).catch(() => ({ data: [] })),
+        ]);
         state.runScripts = data;
+        const schedMap = {};
+        (sch.data || []).forEach(x => { schedMap[x.script_id] = x; });
         $("dr-scripts").innerHTML = data.map(s => {
           const id = s.script_id || s.id;
           const n = ((s.param_schema || []).filter(p => !p.env && !p.constante).length) || (s.parametros_schema || []).length;
           const hint = n ? `${n} parâmetro${n > 1 ? "s" : ""}` : "sem parâmetros";
+          const sc = schedMap[id];
           return `
-          <div class="exec-row">
-            <span class="nm">${esc(s.nome)}</span>
-            <span class="muted" style="font-size:11px">${hint}</span>
-            <button class="btn sm" onclick="runDialog(${id})">executar</button>
+          <div class="exec-item">
+            <div class="exec-row">
+              <span class="nm">${esc(s.nome)}</span>
+              <span class="muted" style="font-size:11px">${hint}</span>
+              <button class="btn sm" onclick="runDialog(${id})">executar</button>
+              <button class="btn ghost sm" onclick="scheduleDialog(${id})">${sc ? "reagendar" : "agendar"}</button>
+            </div>
+            ${sc ? schedTag(sc) : ""}
           </div>`;
         }).join("") || `<div class="muted">Sem scripts vinculados.</div>`;
       } catch (e) { $("dr-scripts").innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
       loadDrawerLogs();
     }
     function closeDrawer() { $("drawer").classList.remove("show"); state.current = null; }
+
+    /* ---- agendar um script direto do drawer ---- */
+    function fmtWhen(iso) {
+      const m = String(iso || "").match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      return m ? `${m[3]}/${m[2]} ${m[4]}:${m[5]} UTC` : "";
+    }
+    function schedTag(sc) {
+      const prox = sc.proxima ? ` · próxima ${fmtWhen(sc.proxima)}` : "";
+      const pausado = sc.ativo ? "" : " · pausado";
+      return `<div class="sched-tag">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+        agendado · ${esc(cronLabel(sc.cron_expr))}${prox}${pausado}
+        <button class="sched-x" onclick="removeSchedule(${sc.id})" title="remover agendamento">remover</button>
+      </div>`;
+    }
+    function scheduleDialog(sid) {
+      const s = (state.runScripts || []).find(x => (x.script_id || x.id) === sid) || {};
+      const dowOpts = [1, 2, 3, 4, 5, 6, 0].map(d => `<option value="${d}">${DIAS_SEMANA[d][0].toUpperCase() + DIAS_SEMANA[d].slice(1)}</option>`).join("");
+      modal(`Agendar — ${esc(s.nome)}`, `
+        <div class="muted" style="margin-bottom:14px;font-size:12.5px">Define quando este script roda sozinho neste cliente.</div>
+        <div class="field"><label>Frequência</label>
+          <select id="sd-preset" onchange="sdToggle()">
+            <option value="hora">A cada hora</option>
+            <option value="dia">Diariamente</option>
+            <option value="semana">Semanalmente</option>
+            <option value="minuto">A cada minuto (demo ao vivo)</option>
+          </select></div>
+        <div class="field" id="sd-campo-dow" style="display:none"><label>Dia da semana</label><select id="sd-dow">${dowOpts}</select></div>
+        <div class="field" id="sd-campo-hora" style="display:none"><label>Horário (UTC)</label><input id="sd-hora" type="time" value="03:00" /></div>
+      `, [
+        { label: "Cancelar", cls: "ghost", act: closeModal },
+        { label: "Agendar", cls: "accent", act: () => saveScheduleFor(sid) },
+      ]);
+      sdToggle();
+    }
+    function sdToggle() {
+      const p = $("sd-preset").value;
+      $("sd-campo-hora").style.display = (p === "dia" || p === "semana") ? "" : "none";
+      $("sd-campo-dow").style.display = (p === "semana") ? "" : "none";
+    }
+    function sdBuildCron() {
+      const p = $("sd-preset").value;
+      if (p === "minuto") return "* * * * *";
+      if (p === "hora") return "0 * * * *";
+      const [hh, mm] = ($("sd-hora").value || "03:00").split(":").map(x => parseInt(x, 10));
+      if (p === "dia") return `${mm} ${hh} * * *`;
+      return `${mm} ${hh} * * ${$("sd-dow").value}`;
+    }
+    async function saveScheduleFor(sid) {
+      try {
+        await api(`/api/v1/tenants/${state.current}/schedules`, { method: "POST", body: JSON.stringify({ script_id: sid, cron_expr: sdBuildCron(), ativo: true }) });
+        closeModal(); toast("Agendamento criado", "ok"); openCliente(state.current);
+      } catch (e) { toast(e.message, "err"); }
+    }
+    async function removeSchedule(id) {
+      try {
+        await api(`/api/v1/tenants/${state.current}/schedules/${id}`, { method: "DELETE" });
+        toast("Agendamento removido", "ok"); openCliente(state.current);
+      } catch (e) { toast(e.message, "err"); }
+    }
 
     /* ---- dialogo de execucao (inputs tipados por parametro) ---- */
     function paramField(sid, p) {

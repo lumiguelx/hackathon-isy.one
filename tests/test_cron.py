@@ -70,3 +70,16 @@ def test_matches_sexta_feira():
     expr = "0 18 * * 5"
     assert cron.matches(expr, _dt(2026, 6, 5, 18, 0))  # sexta
     assert not cron.matches(expr, _dt(2026, 6, 4, 18, 0))  # quinta
+
+
+def test_next_run_a_cada_minuto():
+    assert cron.next_run("* * * * *", _dt(2026, 6, 3, 14, 30)) == _dt(2026, 6, 3, 14, 31)
+
+
+def test_next_run_diario():
+    # as 03:30; agora 14:00 -> proxima e amanha 03:30.
+    assert cron.next_run("30 3 * * *", _dt(2026, 6, 3, 14, 0)) == _dt(2026, 6, 4, 3, 30)
+
+
+def test_next_run_a_cada_hora():
+    assert cron.next_run("0 * * * *", _dt(2026, 6, 3, 14, 30)) == _dt(2026, 6, 3, 15, 0)
