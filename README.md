@@ -88,6 +88,16 @@ Backend em camadas com dependências apontando só para dentro
 deploy, SQLite na demo local), empacotada numa imagem Docker enxuta sobre
 `python:3.11-slim`, publicada no Railway.
 
+## Stack
+
+- **API** — Python 3.11, FastAPI, Uvicorn, Pydantic 2
+- **Persistência** — SQLAlchemy 2.0 · PostgreSQL (psycopg 3) no deploy / SQLite na demo
+- **Observabilidade** — OpenTelemetry Collector, Prometheus, Grafana (cAdvisor + node-exporter)
+- **Notificações** — Slack via webhook (httpx)
+- **Docs de API** — Scalar (`/docs`) e Swagger (`/swagger`), a partir do OpenAPI
+- **Infra** — Docker, deploy na Railway
+- **Qualidade** — pytest e validador próprio de contrato OpenAPI
+
 ## Time
 
 <table>
