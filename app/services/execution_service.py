@@ -65,6 +65,7 @@ def _record(
     stderr: str,
     exit_code: int | None,
     duracao_ms: int,
+    origem: str,
 ) -> Event:
     payload = {
         "script_nome": script.nome,
@@ -75,6 +76,7 @@ def _record(
         "stdout": stdout[: settings.output_limit],
         "stderr": stderr[: settings.output_limit],
         "duracao_ms": duracao_ms,
+        "origem": origem,
     }
     event = events_repo.append(
         db, ev.EXECUTION_COMPLETED, payload, tenant_id=tenant.id, script_id=script.id
@@ -104,7 +106,13 @@ def _run_template(
     return "sucesso", f"[local simulado] {rendered}\nOK (simulado).", "", 0
 
 
-def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> Event:
+def run(
+    db: Session,
+    tenant: Tenant,
+    script: Script,
+    parametros: list[str],
+    origem: str = "manual",
+) -> Event:
     if script.tipo == "template":
         started = time.perf_counter()
         try:
@@ -120,7 +128,7 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
             )
         duracao_ms = int((time.perf_counter() - started) * 1000)
         return _record(
-            db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms
+            db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms, origem
         )
 
     try:
@@ -152,7 +160,7 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
         status, exit_code = "falha", None
         stdout, stderr = "", f"Tempo limite de {settings.exec_timeout}s excedido."
     return _record(
-        db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms
+        db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms, origem
     )
 
 

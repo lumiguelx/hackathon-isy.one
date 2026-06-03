@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # Se True, semeia scripts de demonstracao no primeiro boot (banco vazio).
     seed_demo: bool = False
 
+    # Se True, sobe a thread do agendador (cron) no startup. Desligado nos testes.
+    scheduler_enabled: bool = True
+
     # Usuario SSH para alcancar o servidor do cliente (quando tenant.ssh_host esta setado).
     # A chave privada vem de ISY_SSH_KEY (secret), lida pelos scripts via env.
     ssh_user: str = "isyone"

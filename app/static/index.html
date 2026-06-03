@@ -271,6 +271,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
           Scripts
         </button>
+        <button class="navitem" data-tab="agendamentos" onclick="switchTab('agendamentos')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+          Agendamentos
+        </button>
         <div class="lbl">Segurança & Auditoria</div>
         <button class="navitem" data-tab="token" onclick="switchTab('token')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
@@ -352,6 +356,27 @@
             <table>
               <thead><tr><th>Nome</th><th>Arquivo/Template</th><th>Parâmetros</th><th>Descrição</th><th>Categoria</th><th>Dono</th><th>Ativo</th><th></th></tr></thead>
               <tbody id="scripts-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- AGENDAMENTOS -->
+        <section class="view" id="view-agendamentos">
+          <div class="view-head">
+            <div>
+              <h2>Agendamentos</h2>
+              <div class="sub">Piloto automático: scripts que rodam sozinhos, sem ninguém clicar.</div>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn" onclick="openSchedule()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo agendamento
+            </button>
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Cliente</th><th>Script</th><th>Quando</th><th>Última execução</th><th>Ativo</th><th></th></tr></thead>
+              <tbody id="sched-body"></tbody>
             </table>
           </div>
         </section>
@@ -474,6 +499,9 @@
         if (/\/admin\/tenants\/health$/.test(path)) return { data: DEMO.tenants };
         if (/\/admin\/tenants$/.test(path)) return { data: DEMO.tenants };
         if (/\/admin\/scripts$/.test(path)) return { data: DEMO.scripts };
+        if (/\/admin\/schedules$/.test(path)) return { data: [
+          { id: 1, tenant_id: 1, tenant_slug: "tux-burger", tenant_nome: "Tux Burger", script_id: 4, script_nome: "docker_status", cron_expr: "0 * * * *", parametros: "", ativo: true, ultima_exec: "2026-06-02T14:00:00" },
+        ] };
         const sc = path.match(/\/tenants\/([^/]+)\/scripts$/);
         if (sc) return { data: DEMO.scripts.filter(s => s.ativo) };
         const lg = path.match(/\/tenants\/([^/]+)\/logs$/);
@@ -515,13 +543,14 @@
     }
 
     /* ---- navegação ---- */
-    const CRUMBS = { clientes: "Clientes", scripts: "Catálogo de Scripts", token: "Tokens", auditoria: "Auditoria", frota: "Saúde da Frota" };
+    const CRUMBS = { clientes: "Clientes", scripts: "Catálogo de Scripts", agendamentos: "Agendamentos", token: "Tokens", auditoria: "Auditoria", frota: "Saúde da Frota" };
     function switchTab(name) {
       document.querySelectorAll(".navitem").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
       document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
       $("crumb").textContent = CRUMBS[name] || name;
       toggleMenu(false);
       if (name === "scripts") loadScripts();
+      if (name === "agendamentos") loadAgendamentos();
       if (name === "token") fillClienteSelect();
       if (name === "auditoria") { fillAuditSelect(); loadAuditoria(); }
     }
@@ -738,6 +767,92 @@
       catch (e) { toast(e.message, "err"); loadScripts(); }
     }
 
+    /* ---- AGENDAMENTOS ---- */
+    const DIAS_SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+    function cronLabel(expr) {
+      const p = String(expr || "").trim().split(/\s+/);
+      if (p.length !== 5) return esc(expr);
+      const [mi, ho, dom, mon, dow] = p;
+      if (expr.trim() === "* * * * *") return "a cada minuto";
+      if (mi === "0" && ho === "*" && dom === "*" && mon === "*" && dow === "*") return "a cada hora";
+      const hhmm = (h, m) => `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+      const num = (x) => /^\d+$/.test(x);
+      if (dom === "*" && mon === "*" && dow === "*" && num(mi) && num(ho)) return `diariamente ${hhmm(ho, mi)}`;
+      if (dom === "*" && mon === "*" && num(dow) && num(mi) && num(ho)) return `${DIAS_SEMANA[+dow] || dow} ${hhmm(ho, mi)}`;
+      return esc(expr);
+    }
+    async function loadAgendamentos() {
+      if (!state.tenantsMeta.length) { try { const { data } = await api("/api/v1/admin/tenants"); state.tenantsMeta = data; } catch (_) {} }
+      if (!state.scripts.length) { try { const { data } = await api("/api/v1/admin/scripts"); state.scripts = data; } catch (_) {} }
+      try {
+        const { data } = await api("/api/v1/admin/schedules"); setConn(true);
+        $("sched-body").innerHTML = data.map(s => `
+          <tr>
+            <td><strong>${esc(s.tenant_nome || s.tenant_slug || ("#" + s.tenant_id))}</strong></td>
+            <td>${esc(s.script_nome || ("#" + s.script_id))}${s.parametros ? ` <span class="muted mono" style="font-size:11px">${esc(s.parametros)}</span>` : ""}</td>
+            <td class="mono" style="font-size:12px" title="${esc(s.cron_expr)}">${cronLabel(s.cron_expr)}</td>
+            <td class="muted">${s.ultima_exec ? esc(String(s.ultima_exec).replace("T", " ").slice(0, 19)) : "—"}</td>
+            <td><label class="switch"><input type="checkbox" ${s.ativo ? "checked" : ""} onchange="toggleSchedule(${s.id}, '${esc(s.tenant_slug)}', this.checked)"><span class="slider"></span></label></td>
+            <td><button class="btn ghost sm" onclick="deleteSchedule(${s.id}, '${esc(s.tenant_slug)}')">remover</button></td>
+          </tr>`).join("") || `<tr><td colspan="6" class="empty">Nenhum agendamento. Crie o primeiro para ativar o piloto automático.</td></tr>`;
+      } catch (e) { setConn(false); $("sched-body").innerHTML = `<tr><td colspan="6" class="empty">${esc(e.message)}</td></tr>`; }
+    }
+    function openSchedule() {
+      if (!state.tenantsMeta.length || !state.scripts.length) { loadAgendamentos(); }
+      const tenantsOpts = state.tenantsMeta.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)}</option>`).join("");
+      const scriptsOpts = state.scripts.filter(s => s.ativo).map(s => `<option value="${s.id}">${esc(s.nome)}</option>`).join("");
+      const dowOpts = [1, 2, 3, 4, 5, 6, 0].map(d => `<option value="${d}">${DIAS_SEMANA[d][0].toUpperCase() + DIAS_SEMANA[d].slice(1)}</option>`).join("");
+      modal("Novo agendamento", `
+        <div class="field"><label>Cliente *</label><select id="ag-cliente">${tenantsOpts}</select></div>
+        <div class="field"><label>Script *</label><select id="ag-script">${scriptsOpts}</select></div>
+        <div class="field"><label>Frequência</label>
+          <select id="ag-preset" onchange="agToggleCampos()">
+            <option value="hora">A cada hora</option>
+            <option value="dia">Diariamente</option>
+            <option value="semana">Semanalmente</option>
+            <option value="minuto">A cada minuto (demo ao vivo)</option>
+          </select></div>
+        <div class="field" id="ag-campo-dow" style="display:none"><label>Dia da semana</label><select id="ag-dow">${dowOpts}</select></div>
+        <div class="field" id="ag-campo-hora" style="display:none"><label>Horário (UTC)</label><input id="ag-hora" type="time" value="03:00" /></div>
+        <div class="field"><label>Parâmetros (opcional)</label><input id="ag-params" class="mono" placeholder="ex.: 30" /></div>
+      `, [
+        { label: "Cancelar", cls: "ghost", act: closeModal },
+        { label: "Agendar", cls: "", act: saveSchedule },
+      ]);
+      agToggleCampos();
+    }
+    function agToggleCampos() {
+      const p = $("ag-preset").value;
+      $("ag-campo-hora").style.display = (p === "dia" || p === "semana") ? "" : "none";
+      $("ag-campo-dow").style.display = (p === "semana") ? "" : "none";
+    }
+    function agBuildCron() {
+      const p = $("ag-preset").value;
+      if (p === "minuto") return "* * * * *";
+      if (p === "hora") return "0 * * * *";
+      const [hh, mm] = ($("ag-hora").value || "03:00").split(":").map(x => parseInt(x, 10));
+      if (p === "dia") return `${mm} ${hh} * * *`;
+      return `${mm} ${hh} * * ${$("ag-dow").value}`;
+    }
+    async function saveSchedule() {
+      const slug = $("ag-cliente").value, scriptId = parseInt($("ag-script").value, 10);
+      if (!slug || !scriptId) { toast("Selecione cliente e script", "err"); return; }
+      const body = { script_id: scriptId, cron_expr: agBuildCron(), parametros: $("ag-params").value.trim(), ativo: true };
+      try {
+        await api(`/api/v1/tenants/${slug}/schedules`, { method: "POST", body: JSON.stringify(body) });
+        closeModal(); toast("Agendamento criado", "ok"); loadAgendamentos();
+      } catch (e) { toast(e.message, "err"); }
+    }
+    async function toggleSchedule(id, slug, ativo) {
+      try { await api(`/api/v1/tenants/${slug}/schedules/${id}`, { method: "PUT", body: JSON.stringify({ ativo }) }); toast("Agendamento atualizado", "ok"); }
+      catch (e) { toast(e.message, "err"); loadAgendamentos(); }
+    }
+    async function deleteSchedule(id, slug) {
+      if (!confirm("Remover este agendamento?")) return;
+      try { await api(`/api/v1/tenants/${slug}/schedules/${id}`, { method: "DELETE" }); toast("Agendamento removido", "ok"); loadAgendamentos(); }
+      catch (e) { toast(e.message, "err"); }
+    }
+
     /* ---- TOKEN ---- */
     function fillClienteSelect() {
       $("tok-cliente").innerHTML = state.tenants.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)} (${esc(t.slug)})</option>`).join("");
@@ -777,7 +892,7 @@
         <tr>
           <td class="mono" style="font-size:12px">${esc((l.ocorrido_em||'').replace('T',' ').slice(0,19))}</td>
           <td>${esc(l._nome)}</td>
-          <td>${esc(l.script_nome||l.tipo)}</td>
+          <td>${esc(l.script_nome||l.tipo)}${l.origem==='agendamento' ? ' <span class="badge gold" style="font-size:10px">agendado</span>' : ''}</td>
           <td class="muted mono" style="font-size:12px">${esc(l.parametros||'—')}</td>
           <td><span class="badge ${l.status==='sucesso'?'ok':l.status==='falha'?'fail':'neutral'}">${esc(l.status||'—')}</span></td>
           <td class="muted">${l.exit_code ?? '—'}</td>

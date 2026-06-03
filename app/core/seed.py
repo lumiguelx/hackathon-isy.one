@@ -10,11 +10,12 @@ from sqlalchemy.orm import Session
 from app.core import events as ev
 from app.repositories import (
     events_repo,
+    schedules_repo,
     scripts_repo,
     tenant_scripts_repo,
     tenants_repo,
 )
-from app.schemas import ScriptCreate, TenantCreate
+from app.schemas import ScheduleCreate, ScriptCreate, TenantCreate
 
 CATALOGO = [
     ScriptCreate(
@@ -155,3 +156,17 @@ def seed_demo(db: Session) -> None:
             tenant_scripts_repo.upsert(db, tenant.id, script.id, defaults[nome], True)
 
         _seed_historico(db, i, tenant, scripts)
+
+        # Piloto automatico ao vivo: cliente-1 roda docker_status a cada minuto,
+        # para a banca ver execucoes surgindo sozinhas na auditoria.
+        if i == 1:
+            schedules_repo.create(
+                db,
+                tenant.id,
+                ScheduleCreate(
+                    script_id=scripts["docker_status"].id,
+                    cron_expr="* * * * *",
+                    parametros=f"cliente{i}",
+                    ativo=True,
+                ),
+            )

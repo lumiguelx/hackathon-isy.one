@@ -4,7 +4,7 @@ from sqlalchemy import delete as sa_delete
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Event, Script, Tenant, TenantScript
+from app.models import Event, Schedule, Script, Tenant, TenantScript
 from app.schemas import TenantCreate, TenantUpdate
 
 
@@ -43,7 +43,8 @@ def set_token(db: Session, tenant: Tenant, token: str) -> None:
 
 def delete(db: Session, tenant: Tenant) -> None:
     # Remove dependentes antes do tenant (FKs sem ON DELETE CASCADE):
-    # eventos, bindings e scripts exclusivos do cliente.
+    # agendamentos, eventos, bindings e scripts exclusivos do cliente.
+    db.execute(sa_delete(Schedule).where(Schedule.tenant_id == tenant.id))
     db.execute(sa_delete(Event).where(Event.tenant_id == tenant.id))
     db.execute(sa_delete(TenantScript).where(TenantScript.tenant_id == tenant.id))
     db.execute(sa_delete(Script).where(Script.tenant_id == tenant.id))
