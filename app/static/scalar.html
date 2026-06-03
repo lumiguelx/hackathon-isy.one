@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Isy.One Shell Automation API — Referencia</title>
+    <link rel="icon" type="image/svg+xml" href="/ui/brand/c_icon_navy.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/ui/brand/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/ui/brand/apple-touch-icon.png" />
+
+    <!-- Inter Tight: face de display da marca (isy.one) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap"
+      rel="stylesheet" />
+
+    <style>
+      /* Tema ISYOPS — paleta extraida do brand-spec.md (isy.one). */
+      :root {
+        --scalar-font: "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        --scalar-font-code: ui-monospace, "SF Mono", Menlo, monospace;
+        --scalar-color-accent: #fcb400; /* gold: o unico accent */
+        --scalar-border-radius: 6px;
+      }
+
+      /* Modo claro: workspace off-white da marca. */
+      .light-mode {
+        --scalar-color-1: #15161c;
+        --scalar-color-2: #3a3c45;
+        --scalar-color-3: #6a6c76;
+        --scalar-color-accent: #b07d00;
+        --scalar-background-1: #ffffff;
+        --scalar-background-2: #f6f5f1;
+        --scalar-background-3: #efede7;
+        --scalar-background-accent: #fcb40014;
+        --scalar-border-color: #e7e6e0;
+      }
+
+      /* Modo escuro (default): chrome navy profundo da marca. */
+      .dark-mode {
+        --scalar-color-1: rgba(255, 255, 255, 0.92);
+        --scalar-color-2: rgba(255, 255, 255, 0.62);
+        --scalar-color-3: rgba(255, 255, 255, 0.4);
+        --scalar-color-accent: #fcb400;
+        --scalar-background-1: #010128; /* deepest navy */
+        --scalar-background-2: #0e113a; /* sidebar / dark chrome */
+        --scalar-background-3: #161a4d;
+        --scalar-background-accent: #fcb4001f;
+        --scalar-border-color: rgba(255, 255, 255, 0.09);
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Barra de marca propria, acima da referencia Scalar. */
+      .isy-topbar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 56px;
+        padding: 0 20px;
+        background: #0e113a;
+        border-bottom: 2px solid #fcb400;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .isy-topbar img {
+        height: 30px;
+        width: auto;
+        display: block;
+      }
+      .isy-topbar .sep {
+        width: 1px;
+        height: 22px;
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .isy-topbar .label {
+        font-family: "Inter Tight", system-ui, sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+        color: rgba(255, 255, 255, 0.66);
+      }
+      .isy-topbar .spacer {
+        flex: 1;
+      }
+      .isy-topbar a.back {
+        font-family: "Inter Tight", system-ui, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #fcb400;
+        text-decoration: none;
+      }
+      .isy-topbar a.back:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body class="dark-mode">
+    <header class="isy-topbar">
+      <img src="/ui/brand/c_dark.svg" alt="ISYOPS" />
+      <span class="sep"></span>
+      <span class="label">API Reference</span>
+      <span class="spacer"></span>
+      <a class="back" href="/ui">Console &rarr;</a>
+    </header>
+
+    <!-- Scalar le este spec da propria origem e renderiza a referencia. -->
+    <script
+      id="api-reference"
+      data-url="/openapi.json"
+      data-configuration='{"theme":"none","withDefaultFonts":false,"darkMode":true,"hideDarkModeToggle":false,"metaData":{"title":"Isy.One Shell Automation API — Referencia"}}'></script>
+
+    <!-- Bundle do Scalar: versao fixa + SRI (anti CDN comprometida). -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.58.0"
+      integrity="sha384-OYnMCMKIwY/7+TI/gqX7yuLg86XGVgTUd04CL3OTv3nKKKxY1fmsMPMIu+7NtVcq"
+      crossorigin="anonymous"></script>
+  </body>
+</html>
