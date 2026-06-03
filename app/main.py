@@ -75,12 +75,22 @@ app = FastAPI(
     contact={"name": "Isy.One", "url": "https://isy.one/hackaton/"},
     license_info={"name": "Proprietario"},
     lifespan=lifespan,
+    # Doc principal e o Scalar branded em /docs (rota abaixo); o Swagger fica
+    # disponivel em /swagger para debug e o ReDoc padrao e desligado.
+    docs_url="/swagger",
+    redoc_url=None,
 )
 
 app.include_router(health.router)
 app.include_router(registro.router)
 app.include_router(admin.router)
 app.include_router(tenants.router)
+
+
+# Referencia de API branded (Scalar) servida em /docs.
+@app.get("/docs", include_in_schema=False)
+def scalar_docs() -> FileResponse:
+    return FileResponse(str(_STATIC_DIR / "scalar.html"))
 
 
 # Pagina publica de cadastro self-service.
