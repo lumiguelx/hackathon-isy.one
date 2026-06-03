@@ -100,21 +100,21 @@ Aprofundamento:
   <tr>
     <td align="center" width="200">
       <a href="https://www.linkedin.com/in/ana-gabriella-souza-silva-20a5ab241/">
-        <img src="app/static/brand/team/ana.png" width="96" height="96" alt="Ana Gabriella" /><br />
+        <img src="https://github.com/AnaGabisz.png" width="96" height="96" alt="Ana Gabriella" /><br />
         <b>Ana Gabriella</b>
       </a><br />
       <a href="https://github.com/AnaGabisz">@AnaGabisz</a>
     </td>
     <td align="center" width="200">
       <a href="https://www.linkedin.com/in/gabriel-reis-3202b823b/">
-        <img src="app/static/brand/team/gabriel.png" width="96" height="96" alt="Gabriel Reis" /><br />
+        <img src="https://github.com/gabibribru.png" width="96" height="96" alt="Gabriel Reis" /><br />
         <b>Gabriel Reis</b>
       </a><br />
       <a href="https://github.com/gabibribru">@gabibribru</a>
     </td>
     <td align="center" width="200">
       <a href="https://www.linkedin.com/in/miguel-s-souza/">
-        <img src="app/static/brand/team/miguel.png" width="96" height="96" alt="Luis Miguel" /><br />
+        <img src="https://github.com/lumiguelx.png" width="96" height="96" alt="Luis Miguel" /><br />
         <b>Luis Miguel</b>
       </a><br />
       <a href="https://github.com/lumiguelx">@lumiguelx</a>
