@@ -1,82 +1,123 @@
-# hackathon-isy.one
+<div align="center">
 
-Repositório do time para o hackathon. Organizado por **spec-driven design**:
-nada de código sem uma spec aprovada antes.
+<img src="app/static/brand/c_dark.svg" alt="ISYOPS" width="420" />
 
-## Status
+### Painel de automação de manutenção multi-cliente para a frota Isy.One
 
-Tema definido: **Isy.One Shell Automation API** — API REST que executa, de forma
-controlada e auditada, os shell scripts de manutenção dos servidores dos restaurantes
-parceiros (Agente de Impressão do iFood), eliminando o acesso manual via SSH.
+Executa, de forma controlada, isolada e auditada, os shell scripts de manutenção
+dos servidores dos restaurantes parceiros — eliminando o acesso manual via SSH.
 
-Stack **mandatória pela banca**: **Python 3.11 + FastAPI**, execução via `subprocess`,
-auth por header **`X-Isy-Token`**, persistência **SQLite/PostgreSQL**, empacotamento em
-**Docker** (`python:3.11-slim`/`-alpine`) com scripts lidos por **volume**.
+[**Demo ao vivo**](https://hackathon-api-production-5f01.up.railway.app/ui) · [**API (Swagger)**](https://hackathon-api-production-5f01.up.railway.app/docs)
 
-- Escopo completo (PRD): [docs/specs/2026-06-01-isy-shell-automation-api.md](docs/specs/2026-06-01-isy-shell-automation-api.md)
-- Arquitetura e diagramas: [docs/architecture.md](docs/architecture.md)
-- Decisão de stack: [ADR 0004](docs/adr/0004-stack-python-fastapi.md) (substitui o [0003](docs/adr/0003-stack-e-arquitetura.md))
+`Python 3.11` · `FastAPI` · `SQLAlchemy 2.0` · `PostgreSQL` · `Docker` · `Grafana`
 
-## Critérios de avaliação (banca)
+</div>
 
-| Critério | Peso |
-|----------|------|
-| Arquitetura & API (`subprocess`, JSON padronizado, rotas admin) | 25% |
-| Segurança (validação do `X-Isy-Token`, anti command injection) | 25% |
-| Persistência de logs (auditoria em SQLite/PostgreSQL) | 20% |
-| Deploy & Docker (imagem leve, volumes) | 20% |
-| Pitch & inovação (diferenciais, ex.: alertas Telegram/Discord) | 10% |
+---
 
-## Estrutura
+## O problema
+
+O suporte da Isy.One mantém centenas de servidores Linux de restaurantes parceiros
+(Agente de Impressão do iFood). Toda manutenção — atualizar o agente, limpar logs de
+cupons antigos, checar os containers Docker do banco — exige **acesso manual via SSH**
+para rodar shell scripts. É lento, sem rastreabilidade e vira gargalo operacional: não
+se sabe quem rodou o quê, quando, com quais parâmetros e qual foi o resultado.
+
+## A solução
+
+Um **painel central multi-cliente** que executa esses scripts por requisição
+autenticada, isolada por cliente e registrada como evento imutável. Cada restaurante é
+um **tenant** com credencial própria; cada execução vira **auditoria permanente**; e a
+**saúde** de cada cliente (verde / amarelo / vermelho) é calculada a partir do histórico
+de execuções, sem tabela de status. Tudo dentro de um container Docker, sem ninguém abrir
+um terminal SSH.
+
+## Funcionalidades
+
+- **Multi-tenant isolado** — cada cliente opera apenas os próprios scripts, autenticado
+  por token próprio; o token de um cliente nunca alcança outro.
+- **Execução segura** — `subprocess.run` com lista de argumentos e `shell=False`,
+  whitelist por tenant, validação de path e timeout. Parâmetros maliciosos entram como
+  argumento literal, sem efeito.
+- **Execução remota via SSH** — quando o tenant tem `ssh_host`, o script alcança o
+  servidor real do cliente por SSH; sem ele, roda localmente (modo demo).
+- **Auditoria por event sourcing** — toda execução é um evento append-only (horário,
+  script, parâmetros, status, exit code, duração). Histórico sem furos.
+- **Saúde derivada on-read** — o status de cada cliente é uma projeção calculada sobre os
+  eventos, sempre coerente com o que de fato rodou.
+- **Parametrização estruturada** — scripts declaram um `param_schema` tipado; o console
+  gera os inputs corretos para cada execução.
+- **Agendamento (cron) por tenant** — execução autônoma recorrente, com estado e próxima
+  execução visíveis no painel.
+- **Observabilidade** — métricas exportadas para Prometheus e dashboard de frota no
+  Grafana (filtro por cliente, status agregado, latência e contagem de execuções).
+- **Alertas em tempo real** — notificações no Slack para falhas, sucessos, agendamentos e
+  frota em estado crítico (best-effort, nunca bloqueiam a execução).
+- **Console web + self-service** — UI de operação da frota em `/ui` e cadastro de novos
+  clientes em `/registro`, com a identidade visual da Isy.One.
+
+## Segurança
+
+Bloco mais estratégico do projeto:
+
+- **Auth em dois níveis** — token **admin** (gestão de tenants e catálogo) e token **por
+  tenant** (opera só o próprio cliente). Comparação com `secrets.compare_digest`.
+- **Whitelist de execução** — nunca se executa string arbitrária do request; só scripts
+  cadastrados, ativos e *bindados* ao cliente.
+- **Anti command injection** — `subprocess.run` com lista de argumentos e `shell=False`,
+  sempre. No caminho SSH, parâmetros remotos são validados por charset seguro.
+- **Anti path traversal** — caminho normalizado e obrigado a residir no diretório montado.
+- **Timeout** em toda execução; tokens nunca aparecem em logs nem em respostas.
+
+## Arquitetura
 
 ```
-.
-├── app/         # serviço FastAPI (routes / services / repositories / core)
-├── scripts/     # exemplos de .sh (no deploy vêm via volume do host)
-├── Dockerfile   # imagem leve python:3.11-slim/alpine
-└── docs/
-    ├── architecture.md
-    ├── specs/   # PRD e specs por feature (problema → critério de sucesso)
-    └── adr/     # decisões de arquitetura registradas
+Operador / curl / Swagger / Console (/ui)
+   │  HTTP + header X-Isy-Token  (token admin OU token do tenant)
+   ▼
+[api]  FastAPI  ──▶  rota → service → repository
+   │        ├─▶ local:  subprocess.run([script, *params], shell=False, timeout)
+   │        └─▶ remoto: script faz SSH no servidor do cliente (tenant.ssh_host)
+   ▼
+[banco]  PostgreSQL / SQLite
+         tenants · scripts · tenant_scripts · events (auditoria imutável) · config
 ```
 
-## Como rodar (demo)
+Backend em camadas com dependências apontando só para dentro
+(rota → service → repository → core). Persistência via SQLAlchemy 2.0 (PostgreSQL no
+deploy, SQLite na demo local), empacotada numa imagem Docker enxuta sobre
+`python:3.11-slim`, publicada no Railway.
 
-```bash
-# Local (use Python 3.11 — a stack do Docker)
-python3.11 -m venv .venv && . .venv/bin/activate
-pip install -r requirements-dev.txt
-ISY_SEED_DEMO=true uvicorn app.main:app --reload
+Aprofundamento:
 
-# ou via Docker (ja sobe com seed e volume de scripts)
-docker compose up --build
-```
-
-- Swagger: http://127.0.0.1:8000/docs
-- UI de demonstracao: http://127.0.0.1:8000/ui
-- Token inicial: `544c5787-613a-4ac2-8e61-9e6486f8d74a` (rotacionavel via `PUT /api/v1/admin/token`)
-- `ISY_SEED_DEMO=true` pre-cadastra os scripts de exemplo (`provisionar`, `update_agent`, `cleanup_logs`, `docker_status`).
-- Testes: `pytest` (cobrem token/401, anti command injection, whitelist e auditoria).
-
-### Deploy (Railway)
-
-- Build pelo `Dockerfile` (config em `railway.json`); os scripts vao embarcados na imagem.
-- Variaveis: `ISY_TOKEN`, `ISY_DATABASE_URL` (Postgres do projeto, ex.:
-  `postgresql+psycopg://...` a partir de `${{Postgres.DATABASE_URL}}`),
-  `ISY_SEED_DEMO=true`, `ISY_SCRIPTS_DIR=/opt/isyone/scripts`.
-- Sobe seedado com os 5 clientes de demonstracao (status verde/amarelo/vermelho).
-- Comandos: `railway login` -> `railway link` -> `railway up`.
-- Plano B (video): `docker compose up --build` local — nunca depender de rede ao vivo.
-
-## Fluxo de trabalho
-
-1. **Spec primeiro** — copie `docs/specs/TEMPLATE.md` para `docs/specs/AAAA-MM-DD-<nome>.md` e preencha.
-2. **Decisão técnica** — toda escolha de arquitetura relevante vira um ADR em `docs/adr/`.
-3. **Plano** — quebre a spec em tarefas pequenas e fechadas.
-4. **Implementação** — uma branch por feature, PR pequeno, revisão rápida.
+- **Arquitetura e diagramas** — [`docs/architecture.md`](docs/architecture.md)
+- **Escopo / PRD** — [`docs/specs/2026-06-01-isy-shell-automation-api.md`](docs/specs/2026-06-01-isy-shell-automation-api.md)
+- **Decisões de arquitetura** — [`docs/adr/`](docs/adr/) (stack, multi-tenant + event sourcing)
 
 ## Time
 
-| Nome | GitHub | Função |
-|------|--------|--------|
-| Miguel | @lumiguelx | — |
+<table>
+  <tr>
+    <td align="center" width="200">
+      <a href="https://www.linkedin.com/in/ana-gabriella-souza-silva-20a5ab241/">
+        <img src="app/static/brand/team/ana.png" width="96" height="96" alt="Ana Gabriella" /><br />
+        <b>Ana Gabriella</b>
+      </a><br />
+      <a href="https://github.com/AnaGabisz">@AnaGabisz</a>
+    </td>
+    <td align="center" width="200">
+      <a href="https://www.linkedin.com/in/gabriel-reis-3202b823b/">
+        <img src="app/static/brand/team/gabriel.png" width="96" height="96" alt="Gabriel Reis" /><br />
+        <b>Gabriel Reis</b>
+      </a><br />
+      <a href="https://github.com/gabibribru">@gabibribru</a>
+    </td>
+    <td align="center" width="200">
+      <a href="https://www.linkedin.com/in/miguel-s-souza/">
+        <img src="app/static/brand/team/miguel.png" width="96" height="96" alt="Luis Miguel" /><br />
+        <b>Luis Miguel</b>
+      </a><br />
+      <a href="https://github.com/lumiguelx">@lumiguelx</a>
+    </td>
+  </tr>
+</table>
