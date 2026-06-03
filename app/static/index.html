@@ -3,233 +3,420 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Isy.One — Console de Automação</title>
+  <title>isy.one — Console de Automação</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #f6f7f9; --surface: #fff; --border: #e6e8ec; --border-strong: #d4d8df;
-      --text: #161a20; --muted: #6b7280; --primary: #3b5bdb; --primary-d: #364fc7;
-      --green: #2f9e44; --amber: #e8920c; --red: #e03131;
-      --radius: 12px; --radius-s: 8px;
-      --shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 16px rgba(16,24,40,.05);
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
+      /* isy.one brand (extracted from style.css) */
+      --navy-900:#010128; --navy-800:#0a0d2e; --navy-700:#0e113a; --navy-600:#161a52;
+      --royal:#101c86; --forest:#0c3a30;
+      --gold:#fcb400; --gold-d:#e0a000; --gold-soft:#fff6df;
+
+      --bg:#f6f5f1; --surface:#ffffff; --surface-2:#fbfaf6;
+      --border:#e8e6df; --border-strong:#d9d6cb;
+      --text:#15161c; --text-2:#3a3b44; --muted:#6a6c76; --muted-2:#9a9ca4;
+
+      --green:#1f9d57; --green-soft:#e8f6ee;
+      --amber:#e8920c; --amber-soft:#fdf1dd;
+      --red:#dc2626; --red-soft:#fcebeb;
+
+      --primary:var(--navy-700); --primary-d:var(--navy-800); --accent:var(--gold);
+
+      --radius:14px; --radius-s:10px; --radius-xs:7px;
+      --shadow-sm:0 1px 2px rgba(10,12,40,.05);
+      --shadow:0 1px 2px rgba(10,12,40,.04), 0 10px 26px rgba(10,12,40,.06);
+      --shadow-lg:0 24px 64px rgba(10,12,40,.22);
+
+      --font-display:"Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --font:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter Tight", system-ui, sans-serif;
+      --mono:ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
     }
     * { box-sizing: border-box; }
-    body { font-family: var(--font); margin: 0; color: var(--text); background: var(--bg); font-size: 14px; line-height: 1.5; }
-    a { color: var(--primary); }
+    html, body { height: 100%; }
+    body { font-family: var(--font); margin: 0; color: var(--text); background: var(--bg);
+      font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    h1,h2,h3,h4 { font-family: var(--font-display); letter-spacing: -.02em; margin: 0; }
+    a { color: var(--royal); text-decoration: none; }
     .muted { color: var(--muted); font-size: 12.5px; }
-    .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+    .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-    /* App bar */
-    .appbar { display: flex; align-items: center; gap: 14px; padding: 0 20px; height: 58px;
-      background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
-    .brand { display: flex; align-items: baseline; gap: 2px; font-weight: 700; font-size: 17px; letter-spacing: -.02em; }
-    .brand .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); display: inline-block; margin: 0 1px; transform: translateY(-1px); }
-    .brand small { font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 8px; letter-spacing: 0; }
-    .appbar .spacer { flex: 1; }
-    .token-wrap { display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 4px 4px 4px 12px; }
-    .token-wrap label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-    .token-wrap input { border: 0; background: transparent; font-family: ui-monospace, monospace; font-size: 12px; width: 240px; outline: none; color: var(--text); }
-    .conn { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); }
-    .conn.ok { background: var(--green); box-shadow: 0 0 0 3px rgba(47,158,68,.15); }
-    .conn.bad { background: var(--red); box-shadow: 0 0 0 3px rgba(224,49,49,.15); }
+    /* ---------- shell ---------- */
+    .shell { display: grid; grid-template-columns: 244px 1fr; min-height: 100vh; }
 
-    /* Tabs */
-    .tabs { display: flex; gap: 2px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 58px; z-index: 19; }
-    .tab { padding: 12px 14px; border: 0; background: transparent; cursor: pointer; font-size: 13.5px; color: var(--muted); border-bottom: 2px solid transparent; font-weight: 500; }
-    .tab:hover { color: var(--text); }
-    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    /* ---------- sidebar ---------- */
+    .sidebar { background: var(--navy-700); color: #c8cbe6; display: flex; flex-direction: column;
+      position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--navy-600);
+      background-image: radial-gradient(620px 300px at -10% -5%, rgba(252,180,0,.10), transparent 60%); }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 20px 22px 18px;
+      font-family: var(--font-display); font-weight: 800; font-size: 19px; color: #fff; letter-spacing: -.03em; }
+    .brand .logo { display: inline-flex; align-items: baseline; }
+    .brand .gdot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); display: inline-block; margin: 0 2px;
+      box-shadow: 0 0 0 4px rgba(252,180,0,.18); transform: translateY(-2px); }
+    .brand .tag { display: block; font-size: 10.5px; font-weight: 500; color: #8a8fc0; letter-spacing: .14em; text-transform: uppercase; margin-top: 2px; }
 
-    main { padding: 24px 20px 60px; max-width: 1200px; margin: 0 auto; }
-    .view { display: none; }
+    .nav { padding: 8px 12px; display: grid; gap: 2px; }
+    .nav .lbl { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #6b70a3; padding: 14px 10px 6px; font-weight: 600; }
+    .navitem { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+      padding: 9px 11px; border: 0; background: transparent; color: #c0c3e0; cursor: pointer;
+      font-size: 13.5px; font-weight: 500; font-family: var(--font); border-radius: var(--radius-s);
+      position: relative; transition: background .12s, color .12s; }
+    .navitem svg { width: 17px; height: 17px; flex: none; opacity: .85; }
+    .navitem:hover { background: rgba(255,255,255,.05); color: #fff; }
+    .navitem.active { background: rgba(255,255,255,.07); color: #fff; }
+    .navitem.active::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px;
+      background: var(--gold); border-radius: 0 3px 3px 0; }
+    .navitem.active svg { opacity: 1; color: var(--gold); }
+
+    .sidebar .foot { margin-top: auto; padding: 14px; border-top: 1px solid var(--navy-600); display: grid; gap: 10px; }
+    .token-wrap { display: grid; gap: 6px; background: rgba(255,255,255,.04); border: 1px solid var(--navy-600);
+      border-radius: var(--radius-s); padding: 9px 11px; }
+    .token-wrap label { font-size: 9.5px; color: #8a8fc0; text-transform: uppercase; letter-spacing: .1em; font-weight: 600; }
+    .token-row { display: flex; align-items: center; gap: 8px; }
+    .token-wrap input { border: 0; background: transparent; font-family: var(--mono); font-size: 11.5px;
+      width: 100%; outline: none; color: #eef0ff; }
+    .conn { width: 8px; height: 8px; border-radius: 50%; background: #4a4f80; flex: none; transition: .2s; }
+    .conn.ok { background: var(--gold); box-shadow: 0 0 0 3px rgba(252,180,0,.2); }
+    .conn.bad { background: var(--red); box-shadow: 0 0 0 3px rgba(220,38,38,.22); }
+    .conn.demo { background: #6b70a3; box-shadow: 0 0 0 3px rgba(107,112,163,.25); }
+    .foot-meta { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #8a8fc0; padding: 0 2px; }
+
+    /* ---------- main ---------- */
+    .main { min-width: 0; display: flex; flex-direction: column; }
+    .topbar { display: flex; align-items: center; gap: 14px; padding: 0 28px; height: 62px;
+      background: rgba(246,245,241,.82); backdrop-filter: saturate(1.4) blur(10px);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
+    .topbar .crumb { font-size: 12px; color: var(--muted); display: flex; gap: 7px; align-items: center; }
+    .topbar .crumb b { color: var(--text); font-weight: 600; }
+    .topbar .spacer { flex: 1; }
+    .demo-pill { display: none; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: #8a6a00;
+      background: var(--gold-soft); border: 1px solid #f3dca0; padding: 4px 11px; border-radius: 999px; }
+    .demo-pill.show { display: inline-flex; }
+
+    .menu-btn { display: none; }
+
+    main.content { padding: 26px 28px 64px; max-width: 1240px; width: 100%; margin: 0 auto; }
+    .view { display: none; animation: fade .18s ease; }
     .view.active { display: block; }
-    .view-head { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; }
-    .view-head h2 { margin: 0; font-size: 19px; letter-spacing: -.01em; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } }
+    .view-head { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; flex-wrap: wrap; }
+    .view-head h2 { font-size: 23px; }
+    .view-head .sub { color: var(--muted); font-size: 13px; margin-top: 3px; }
     .view-head .spacer { flex: 1; }
 
-    /* Buttons */
-    .btn { padding: 8px 14px; border: 1px solid var(--primary); background: var(--primary); color: #fff; border-radius: var(--radius-s); cursor: pointer; font-size: 13px; font-weight: 600; font-family: var(--font); }
+    /* ---------- buttons ---------- */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border: 1px solid var(--primary);
+      background: var(--primary); color: #fff; border-radius: var(--radius-s); cursor: pointer; font-size: 13px;
+      font-weight: 600; font-family: var(--font); transition: background .12s, border-color .12s, transform .08s, box-shadow .12s; }
     .btn:hover { background: var(--primary-d); border-color: var(--primary-d); }
+    .btn:active { transform: translateY(1px); }
+    .btn.accent { background: var(--gold); border-color: var(--gold); color: var(--navy-900); }
+    .btn.accent:hover { background: var(--gold-d); border-color: var(--gold-d); box-shadow: 0 6px 18px rgba(252,180,0,.3); }
     .btn.ghost { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
-    .btn.ghost:hover { background: var(--bg); }
-    .btn.danger { background: #fff; color: var(--red); border-color: #f3c2c2; }
-    .btn.danger:hover { background: #fff5f5; }
-    .btn.sm { padding: 5px 10px; font-size: 12px; }
-    .btn:disabled { opacity: .55; cursor: default; }
+    .btn.ghost:hover { background: var(--surface-2); border-color: var(--muted-2); }
+    .btn.danger { background: #fff; color: var(--red); border-color: #f0c4c4; }
+    .btn.danger:hover { background: var(--red-soft); }
+    .btn.sm { padding: 6px 11px; font-size: 12px; }
+    .btn:disabled { opacity: .55; cursor: default; transform: none; }
 
-    /* Cards / grid */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
-    .card.click { cursor: pointer; transition: border-color .12s, transform .12s; }
-    .card.click:hover { border-color: var(--border-strong); transform: translateY(-1px); }
-    .card .name { font-weight: 650; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-    .card .slug { font-size: 11.5px; color: var(--muted); font-family: ui-monospace, monospace; }
-    .card .meta { margin-top: 10px; display: grid; gap: 3px; }
+    /* ---------- cards / grid ---------- */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; box-shadow: var(--shadow-sm); }
+    .card.click { cursor: pointer; transition: border-color .14s, transform .14s, box-shadow .14s; }
+    .card.click:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .card .name { font-family: var(--font-display); font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 9px; letter-spacing: -.01em; }
+    .card .slug { font-size: 11.5px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+    .card .meta { margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--border); display: grid; gap: 5px; }
+    .card .meta .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .card .meta .k { font-size: 11px; color: var(--muted-2); text-transform: uppercase; letter-spacing: .04em; }
+    .card .meta .v { font-size: 12.5px; color: var(--text-2); font-weight: 500; }
 
+    /* status dots */
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
     .verde { background: var(--green); } .amarelo { background: var(--amber); } .vermelho { background: var(--red); }
-    .pulse { box-shadow: 0 0 0 0 currentColor; animation: pulse 1.8s infinite; }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(224,49,49,.4);} 70%{ box-shadow: 0 0 0 7px rgba(224,49,49,0);} 100%{ box-shadow:0 0 0 0 rgba(224,49,49,0);} }
+    .pulse { animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,.45);} 70%{ box-shadow: 0 0 0 7px rgba(220,38,38,0);} 100%{ box-shadow:0 0 0 0 rgba(220,38,38,0);} }
 
-    /* Table */
-    table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
-    th { background: #fbfbfc; color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; }
+    /* ---------- table ---------- */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+    th { background: var(--surface-2); color: var(--muted); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; }
     tr:last-child td { border-bottom: 0; }
-    tbody tr:hover { background: #fafbfe; }
+    tbody tr { transition: background .1s; }
+    tbody tr:hover { background: var(--surface-2); }
 
-    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
-    .badge.ok { background: #e9f8ee; color: var(--green); }
-    .badge.fail { background: #fdeaea; color: var(--red); }
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .01em; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .badge.ok { background: var(--green-soft); color: var(--green); }
+    .badge.fail { background: var(--red-soft); color: var(--red); }
     .badge.neutral { background: #eef0f3; color: var(--muted); }
+    .badge.gold { background: var(--gold-soft); color: #8a6a00; }
+    .badge.gold::before { display: none; }
 
-    /* Toggle */
+    /* ---------- toggle ---------- */
     .switch { position: relative; width: 38px; height: 22px; display: inline-block; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; inset: 0; background: var(--border-strong); border-radius: 999px; transition: .15s; cursor: pointer; }
-    .slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .15s; }
+    .slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
     .switch input:checked + .slider { background: var(--green); }
     .switch input:checked + .slider::before { transform: translateX(16px); }
 
-    /* Inputs */
-    .field { margin-bottom: 12px; }
-    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
-    .field input, .field select, .field textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--border-strong); border-radius: var(--radius-s); font-size: 13.5px; font-family: var(--font); background: #fff; }
-    .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid rgba(59,91,219,.25); border-color: var(--primary); }
-    .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    /* ---------- inputs ---------- */
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 6px; font-weight: 500; }
+    .field input, .field select, .field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xs); font-size: 13.5px; font-family: var(--font); background: #fff; color: var(--text); transition: border-color .12s, box-shadow .12s; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--royal); box-shadow: 0 0 0 3px rgba(16,28,134,.12); }
+    .field .hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
     .field.invalid input { border-color: var(--red); }
 
-    /* Modal */
-    .overlay { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; align-items: flex-start; justify-content: center; z-index: 50; padding: 40px 16px; overflow:auto; }
+    /* ---------- modal ---------- */
+    .overlay { position: fixed; inset: 0; background: rgba(1,1,40,.5); display: none; align-items: flex-start; justify-content: center; z-index: 50; padding: 48px 16px; overflow: auto; backdrop-filter: blur(2px); }
     .overlay.show { display: flex; }
-    .modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 60px rgba(16,24,40,.3); }
-    .modal header { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
-    .modal header h3 { margin: 0; font-size: 16px; }
-    .modal header .x { margin-left: auto; cursor: pointer; color: var(--muted); border: 0; background: none; font-size: 20px; line-height: 1; }
-    .modal .body { padding: 20px; }
-    .modal .foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+    .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 540px; box-shadow: var(--shadow-lg); animation: pop .18s ease; }
+    @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.99); } }
+    .modal header { display: flex; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+    .modal header h3 { font-size: 17px; }
+    .modal header .x { margin-left: auto; cursor: pointer; color: var(--muted); border: 0; background: none; font-size: 22px; line-height: 1; border-radius: 6px; width: 30px; height: 30px; }
+    .modal header .x:hover { background: var(--surface-2); color: var(--text); }
+    .modal .body { padding: 22px; }
+    .modal .foot { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
 
-    /* Drawer */
-    .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 460px; max-width: 92vw; background: var(--surface); box-shadow: -8px 0 40px rgba(16,24,40,.18); transform: translateX(100%); transition: transform .2s; z-index: 40; display: flex; flex-direction: column; }
+    /* ---------- drawer (tenant detail) ---------- */
+    .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 520px; max-width: 94vw; background: var(--bg);
+      box-shadow: var(--shadow-lg); transform: translateX(100%); transition: transform .24s cubic-bezier(.4,0,.2,1); z-index: 40; display: flex; flex-direction: column; }
     .drawer.show { transform: translateX(0); }
-    .drawer header { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
-    .drawer .body { padding: 20px; overflow: auto; flex: 1; }
-    .exec-row { display: flex; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
-    .exec-row .nm { font-weight: 600; min-width: 110px; font-size: 13px; }
-    .exec-row input { flex: 1; padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: 6px; font-size: 12px; }
+    .drawer .dr-hero { background: var(--navy-700); color: #fff; padding: 22px 24px 20px;
+      background-image: radial-gradient(420px 200px at 100% -20%, rgba(252,180,0,.16), transparent 60%); }
+    .dr-hero .top { display: flex; align-items: center; gap: 10px; }
+    .dr-hero .top .x { margin-left: auto; }
+    .dr-hero .btn.ghost { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.18); }
+    .dr-hero .btn.ghost:hover { background: rgba(255,255,255,.14); }
+    .dr-hero .btn.danger { background: rgba(220,38,38,.14); color: #ffb4b4; border-color: rgba(220,38,38,.4); }
+    .dr-hero .btn.danger:hover { background: rgba(220,38,38,.24); }
+    .dr-hero h3 { font-size: 22px; margin-top: 16px; display: flex; align-items: center; gap: 10px; }
+    .dr-hero .slug { font-family: var(--mono); font-size: 12px; color: #9a9fce; margin-top: 4px; }
+    .dr-hero .dot { width: 12px; height: 12px; box-shadow: 0 0 0 4px rgba(255,255,255,.08); }
+    .drawer .body { padding: 22px 24px; overflow: auto; flex: 1; }
+    .sec-label { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 22px 0 11px; display: flex; align-items: center; gap: 8px; }
+    .sec-label:first-child { margin-top: 0; }
+    .sec-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
-    pre { background: #0d1117; color: #c9f3d4; padding: 14px; border-radius: var(--radius-s); white-space: pre-wrap; word-break: break-word; font-size: 12px; line-height: 1.55; max-height: 300px; overflow: auto; font-family: ui-monospace, monospace; }
+    .exec-row { display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 7px; flex-wrap: wrap; }
+    .exec-row .nm { font-weight: 600; min-width: 120px; font-size: 13px; font-family: var(--font-display); }
+    .exec-row input { flex: 1; min-width: 90px; padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 6px; font-size: 12px; font-family: var(--mono); }
+    .exec-row .btn { margin-left: auto; }
 
-    /* Toast */
-    .toasts { position: fixed; bottom: 20px; right: 20px; display: grid; gap: 8px; z-index: 60; }
-    .toast { background: var(--text); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow); animation: rise .2s; }
-    .toast.ok { background: var(--green); } .toast.err { background: var(--red); }
-    @keyframes rise { from { opacity: 0; transform: translateY(8px);} }
-    .empty { padding: 40px; text-align: center; color: var(--muted); }
-    iframe { width: 100%; height: 660px; border: 1px solid var(--border); border-radius: var(--radius); }
+    pre { background: var(--navy-900); color: #b7f5cb; padding: 16px; border-radius: var(--radius-s); white-space: pre-wrap;
+      word-break: break-word; font-size: 12px; line-height: 1.6; max-height: 320px; overflow: auto; font-family: var(--mono);
+      border: 1px solid var(--navy-600); }
+
+    /* timeline (history) */
+    .tl { display: grid; gap: 0; }
+    .tl-item { display: flex; gap: 11px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .tl-item:last-child { border-bottom: 0; }
+    .tl-item .tl-when { font-family: var(--mono); font-size: 11.5px; color: var(--muted); min-width: 132px; }
+    .tl-item .tl-name { font-size: 13px; font-weight: 500; }
+
+    /* ---------- toasts ---------- */
+    .toasts { position: fixed; bottom: 22px; right: 22px; display: grid; gap: 9px; z-index: 60; }
+    .toast { background: var(--navy-800); color: #fff; padding: 12px 17px; border-radius: 10px; font-size: 13px;
+      font-weight: 500; box-shadow: var(--shadow-lg); animation: rise .22s; display: flex; align-items: center; gap: 9px; }
+    .toast::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex: none; }
+    .toast.ok::before { background: var(--green); } .toast.err::before { background: var(--red); }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+
+    .empty { padding: 56px 24px; text-align: center; color: var(--muted); }
+    .empty svg { width: 30px; height: 30px; opacity: .35; margin-bottom: 10px; }
+    iframe { width: 100%; height: 680px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+
+    /* ---------- responsive ---------- */
+    @media (max-width: 860px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; left: 0; top: 0; z-index: 45; width: 252px; height: 100vh;
+        transform: translateX(-100%); transition: transform .24s; }
+      .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+      .menu-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+        border: 1px solid var(--border-strong); background: var(--surface); border-radius: var(--radius-xs); cursor: pointer; color: var(--text); }
+      .scrim { position: fixed; inset: 0; background: rgba(1,1,40,.4); z-index: 44; display: none; }
+      .scrim.show { display: block; }
+      main.content { padding: 20px 16px 56px; }
+      .topbar { padding: 0 16px; }
+    }
+    @media (min-width: 861px) { .scrim { display: none !important; } }
   </style>
 </head>
 <body>
-  <div class="appbar">
-    <div class="brand">isy<span class="dot"></span>one <small>Console de Automação</small></div>
-    <div class="spacer"></div>
-    <div class="token-wrap">
-      <label>X-Isy-Token</label>
-      <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" spellcheck="false" />
-      <span id="conn" class="conn" title="status da conexão"></span>
+  <div class="shell">
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="logo">isy<span class="gdot"></span>one</span>
+      </div>
+      <div style="padding:0 22px 6px"><span class="brand" style="padding:0"><span class="tag">Console de Automação</span></span></div>
+
+      <nav class="nav">
+        <div class="lbl">Operação</div>
+        <button class="navitem active" data-tab="clientes" onclick="switchTab('clientes')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Clientes
+        </button>
+        <button class="navitem" data-tab="scripts" onclick="switchTab('scripts')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Scripts
+        </button>
+        <div class="lbl">Segurança & Auditoria</div>
+        <button class="navitem" data-tab="token" onclick="switchTab('token')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          Tokens
+        </button>
+        <button class="navitem" data-tab="auditoria" onclick="switchTab('auditoria')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+          Auditoria
+        </button>
+        <div class="lbl" id="lbl-obs" style="display:none">Observabilidade</div>
+        <button class="navitem" data-tab="frota" id="tab-frota" onclick="switchTab('frota')" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Saúde da Frota
+        </button>
+      </nav>
+
+      <div class="foot">
+        <div class="token-wrap">
+          <label>X-Isy-Token</label>
+          <div class="token-row">
+            <input id="token" value="544c5787-613a-4ac2-8e61-9e6486f8d74a" spellcheck="false" />
+            <span id="conn" class="conn" title="status da conexão"></span>
+          </div>
+        </div>
+        <div class="foot-meta"><span id="conn-label">conectando…</span></div>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim" onclick="toggleMenu(false)"></div>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="main">
+      <div class="topbar">
+        <button class="menu-btn" onclick="toggleMenu(true)" aria-label="menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="crumb">isy.one <span>/</span> <b id="crumb">Clientes</b></div>
+        <div class="spacer"></div>
+        <span class="demo-pill" id="demo-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          modo demonstração
+        </span>
+        <button class="btn ghost sm" onclick="refreshAll()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Atualizar
+        </button>
+      </div>
+
+      <main class="content">
+        <!-- CLIENTES -->
+        <section class="view active" id="view-clientes">
+          <div class="view-head">
+            <div>
+              <h2>Clientes</h2>
+              <div class="sub" id="clientes-count">carregando frota…</div>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn accent" onclick="openProvision()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Provisionar cliente
+            </button>
+          </div>
+          <div class="grid" id="grid"></div>
+        </section>
+
+        <!-- SCRIPTS -->
+        <section class="view" id="view-scripts">
+          <div class="view-head">
+            <div>
+              <h2>Catálogo de Scripts</h2>
+              <div class="sub">Comandos de manutenção globais e exclusivos por cliente.</div>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn" onclick="openScript()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo script
+            </button>
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Nome</th><th>Arquivo/Template</th><th>Parâmetros</th><th>Descrição</th><th>Categoria</th><th>Dono</th><th>Ativo</th><th></th></tr></thead>
+              <tbody id="scripts-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TOKEN -->
+        <section class="view" id="view-token">
+          <div class="view-head"><div><h2>Tokens de Autenticação</h2><div class="sub">Rotação imediata. Cada cliente tem token de execução isolado.</div></div></div>
+          <div class="grid" style="grid-template-columns: repeat(auto-fill,minmax(340px,1fr))">
+            <div class="card">
+              <div class="name">Token administrativo</div>
+              <p class="muted" style="margin:8px 0 14px">Autoriza a gestão de clientes, catálogo e tokens.</p>
+              <div class="field"><label>Novo token (≥ 8 caracteres)</label><input id="adm-token" placeholder="novo token admin" /></div>
+              <button class="btn" onclick="rotateAdmin()">Rotacionar token admin</button>
+            </div>
+            <div class="card">
+              <div class="name">Token por cliente</div>
+              <p class="muted" style="margin:8px 0 14px">Cada cliente tem seu próprio token de execução (isolamento).</p>
+              <div class="field"><label>Cliente</label><select id="tok-cliente"></select></div>
+              <div class="field"><label>Novo token (≥ 8 caracteres)</label><input id="tok-novo" placeholder="novo token do cliente" /></div>
+              <button class="btn" onclick="rotateTenant()">Rotacionar token do cliente</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- AUDITORIA -->
+        <section class="view" id="view-auditoria">
+          <div class="view-head">
+            <div><h2>Auditoria de Execuções</h2><div class="sub">Trilha imutável de toda manutenção executada na frota.</div></div>
+            <div class="spacer"></div>
+            <select id="aud-cliente" onchange="loadAuditoria()" style="padding:9px 12px;border:1px solid var(--border-strong);border-radius:8px;font-family:var(--font);font-size:13px;background:#fff"></select>
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Horário (UTC)</th><th>Cliente</th><th>Script</th><th>Parâmetros</th><th>Status</th><th>exit</th><th>Duração</th></tr></thead>
+              <tbody id="aud-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- FROTA (Grafana) -->
+        <section class="view" id="view-frota">
+          <div class="view-head"><div><h2>Saúde da Frota — Docker em tempo real</h2><div class="sub">OTel + Prometheus + Grafana. Rode <strong>update_agent</strong> ou <strong>cleanup_logs</strong> e veja os painéis reagirem.</div></div></div>
+          <iframe id="grafana-frame" title="Grafana"></iframe>
+        </section>
+      </main>
     </div>
-    <button class="btn ghost sm" onclick="refreshAll()">Atualizar</button>
   </div>
-
-  <nav class="tabs">
-    <button class="tab active" data-tab="clientes" onclick="switchTab('clientes')">Clientes</button>
-    <button class="tab" data-tab="scripts" onclick="switchTab('scripts')">Scripts</button>
-    <button class="tab" data-tab="token" onclick="switchTab('token')">Token</button>
-    <button class="tab" data-tab="auditoria" onclick="switchTab('auditoria')">Auditoria</button>
-    <button class="tab" data-tab="frota" id="tab-frota" onclick="switchTab('frota')" style="display:none">Frota</button>
-  </nav>
-
-  <main>
-    <!-- CLIENTES -->
-    <section class="view active" id="view-clientes">
-      <div class="view-head">
-        <h2>Clientes</h2>
-        <span class="muted" id="clientes-count"></span>
-        <div class="spacer"></div>
-        <button class="btn" onclick="openProvision()">+ Provisionar cliente</button>
-      </div>
-      <div class="grid" id="grid"></div>
-    </section>
-
-    <!-- SCRIPTS -->
-    <section class="view" id="view-scripts">
-      <div class="view-head">
-        <h2>Catálogo de Scripts</h2>
-        <div class="spacer"></div>
-        <button class="btn" onclick="openScript()">+ Novo script</button>
-      </div>
-      <table>
-        <thead><tr><th>Nome</th><th>Arquivo/Template</th><th>Parâmetros</th><th>Descrição</th><th>Categoria</th><th>Dono</th><th>Ativo</th><th></th></tr></thead>
-        <tbody id="scripts-body"></tbody>
-      </table>
-    </section>
-
-    <!-- TOKEN -->
-    <section class="view" id="view-token">
-      <div class="view-head"><h2>Tokens de Autenticação</h2></div>
-      <div class="grid" style="grid-template-columns: repeat(auto-fill,minmax(320px,1fr))">
-        <div class="card">
-          <div class="name">Token administrativo</div>
-          <p class="muted">Autoriza a gestão de clientes, catálogo e tokens. Rotação imediata.</p>
-          <div class="field"><label>Novo token (≥ 8 caracteres)</label><input id="adm-token" placeholder="novo token admin" /></div>
-          <button class="btn" onclick="rotateAdmin()">Rotacionar token admin</button>
-        </div>
-        <div class="card">
-          <div class="name">Token por cliente</div>
-          <p class="muted">Cada cliente tem seu próprio token de execução (isolamento).</p>
-          <div class="field"><label>Cliente</label><select id="tok-cliente"></select></div>
-          <div class="field"><label>Novo token (≥ 8 caracteres)</label><input id="tok-novo" placeholder="novo token do cliente" /></div>
-          <button class="btn" onclick="rotateTenant()">Rotacionar token do cliente</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- AUDITORIA -->
-    <section class="view" id="view-auditoria">
-      <div class="view-head">
-        <h2>Auditoria de Execuções</h2>
-        <div class="spacer"></div>
-        <select id="aud-cliente" onchange="loadAuditoria()" style="padding:8px 11px;border:1px solid var(--border-strong);border-radius:8px"></select>
-      </div>
-      <table>
-        <thead><tr><th>Horário (UTC)</th><th>Cliente</th><th>Script</th><th>Parâmetros</th><th>Status</th><th>exit</th><th>Duração</th></tr></thead>
-        <tbody id="aud-body"></tbody>
-      </table>
-    </section>
-
-    <!-- FROTA (Grafana) -->
-    <section class="view" id="view-frota">
-      <div class="view-head"><h2>Saúde da Frota — Docker em tempo real</h2></div>
-      <p class="muted" style="margin-top:-8px">OTel + Prometheus + Grafana. Rode <strong>update_agent</strong> ou <strong>cleanup_logs</strong> num cliente e veja os painéis reagirem.</p>
-      <iframe id="grafana-frame" title="Grafana"></iframe>
-    </section>
-  </main>
 
   <!-- Drawer cliente -->
   <div class="drawer" id="drawer">
-    <header>
-      <span id="dr-dot" class="dot"></span>
-      <div><div id="dr-nome" style="font-weight:650"></div><div id="dr-slug" class="slug"></div></div>
-      <div style="margin-left:auto;display:flex;gap:8px">
-        <button class="btn danger sm" onclick="deprovision()">Desprovisionar</button>
-        <button class="btn ghost sm" onclick="closeDrawer()">Fechar</button>
+    <div class="dr-hero">
+      <div class="top">
+        <span class="muted" style="color:#9a9fce;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Detalhe do cliente</span>
+        <div class="x" style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn danger sm" onclick="deprovision()">Desprovisionar</button>
+          <button class="btn ghost sm" onclick="closeDrawer()">Fechar</button>
+        </div>
       </div>
-    </header>
+      <h3><span id="dr-dot" class="dot"></span><span id="dr-nome"></span></h3>
+      <div id="dr-slug" class="slug"></div>
+    </div>
     <div class="body">
-      <div class="muted" style="margin-bottom:6px">Manutenção</div>
+      <div class="sec-label">Manutenção</div>
       <div id="dr-scripts"></div>
-      <div class="muted" style="margin:16px 0 6px">Saída</div>
+      <div class="sec-label">Saída do último comando</div>
       <pre id="dr-out">—</pre>
-      <div class="muted" style="margin:16px 0 6px">Histórico recente</div>
+      <div class="sec-label">Histórico recente</div>
       <div id="dr-logs"></div>
     </div>
   </div>
@@ -244,42 +431,117 @@
     const headers = () => ({ "Content-Type": "application/json", "X-Isy-Token": token() });
     const state = { tenants: [], tenantsMeta: [], scripts: [], current: null, grafana: null };
 
+    /* ---- demo fallback: populates the UI when the live API is unreachable ----
+       Never overrides real data — only used when a fetch fails (offline preview / banca). */
+    let DEMO_LOCK = false;
+    const DEMO = {
+      tenants: [
+        { id: 1, slug: "tux-burger", nome: "Tux Burger", status_geral: "verde",
+          ultima_manutencao: { script_nome: "backup_db", status: "sucesso" }, ultimo_backup: true },
+        { id: 2, slug: "padaria-pao-quente", nome: "Padaria Pão Quente", status_geral: "amarelo",
+          ultima_manutencao: { script_nome: "cleanup_logs", status: "sucesso" }, ultimo_backup: true },
+        { id: 3, slug: "studio-fitness", nome: "Studio Fitness", status_geral: "vermelho",
+          ultima_manutencao: { script_nome: "update_agent", status: "falha" }, ultimo_backup: false },
+        { id: 4, slug: "cafe-central", nome: "Café Central", status_geral: "verde",
+          ultima_manutencao: { script_nome: "docker_status", status: "sucesso" }, ultimo_backup: true },
+      ],
+      scripts: [
+        { id: 1, nome: "cleanup_logs", tipo: "arquivo", caminho: "cleanup_logs.sh", parametros: "dias", parametros_schema: [{nome:"dias",tipo:"int"}], descricao: "Limpa logs antigos do container", categoria: "cleanup", tenant_id: null, ativo: true },
+        { id: 2, nome: "backup_db", tipo: "arquivo", caminho: "backup_db.sh", parametros: "", parametros_schema: [], descricao: "Dump do Postgres do cliente", categoria: "backup", tenant_id: null, ativo: true },
+        { id: 3, nome: "update_agent", tipo: "arquivo", caminho: "update_agent.sh", parametros: "versao", parametros_schema: [{nome:"versao",tipo:"slug"}], descricao: "Atualiza o agente para a versão alvo", categoria: "update", tenant_id: null, ativo: true },
+        { id: 4, nome: "reinicia-odoo", tipo: "template", template: "docker restart {{container:odoo}}", parametros: "", parametros_schema: [], descricao: "Reinicia o Odoo do cliente", categoria: "other", tenant_id: 1, ativo: true },
+      ],
+      logsFor: (slug) => {
+        const base = "2026-06-02T1";
+        return [
+          { ocorrido_em: base+"4:32:10", script_nome: "backup_db", status: "sucesso", parametros: "", exit_code: 0, duracao_ms: 1840 },
+          { ocorrido_em: base+"1:05:44", script_nome: "cleanup_logs", status: "sucesso", parametros: "7", exit_code: 0, duracao_ms: 612 },
+          { ocorrido_em: base+"0:12:03", script_nome: "update_agent", status: slug==="studio-fitness"?"falha":"sucesso", parametros: "v2.4.1", exit_code: slug==="studio-fitness"?1:0, duracao_ms: 4210 },
+        ];
+      },
+    };
+    function markDemo() {
+      DEMO_LOCK = true;
+      $("demo-pill").classList.add("show");
+      $("conn").className = "conn demo";
+      $("conn-label").textContent = "modo demonstração";
+    }
+    function demoFor(path, opts) {
+      const m = (opts.method || "GET").toUpperCase();
+      if (m === "GET" || !opts.method) {
+        if (/\/admin\/tenants\/health$/.test(path)) return { data: DEMO.tenants };
+        if (/\/admin\/tenants$/.test(path)) return { data: DEMO.tenants };
+        if (/\/admin\/scripts$/.test(path)) return { data: DEMO.scripts };
+        const sc = path.match(/\/tenants\/([^/]+)\/scripts$/);
+        if (sc) return { data: DEMO.scripts.filter(s => s.ativo) };
+        const lg = path.match(/\/tenants\/([^/]+)\/logs$/);
+        if (lg) return { data: DEMO.logsFor(lg[1]) };
+      }
+      if (m === "POST" && /\/scripts\/\d+\/run$/.test(path)) {
+        return { data: { status: "sucesso", exit_code: 0, duracao_ms: 734, stdout: "[demo] comando executado com sucesso\n", stderr: "" } };
+      }
+      return null;
+    }
+
     async function api(path, opts = {}) {
-      const res = await fetch(path, { headers: headers(), ...opts });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.detail || `HTTP ${res.status}`);
-      return body;
+      try {
+        const res = await fetch(path, { headers: headers(), ...opts });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.detail || `HTTP ${res.status}`);
+        return body;
+      } catch (e) {
+        const demo = demoFor(path, opts);
+        if (demo) { markDemo(); return demo; }
+        throw e;
+      }
     }
     function toast(msg, type = "") {
       const t = document.createElement("div");
       t.className = "toast " + type; t.textContent = msg;
       $("toasts").appendChild(t); setTimeout(() => t.remove(), 3200);
     }
-    function setConn(ok) { $("conn").className = "conn " + (ok ? "ok" : "bad"); }
+    function setConn(ok) {
+      if (DEMO_LOCK) { $("conn").className = "conn demo"; $("conn-label").textContent = "modo demonstração"; return; }
+      $("conn").className = "conn " + (ok ? "ok" : "bad");
+      $("conn-label").textContent = ok ? "conectado" : "sem conexão";
+    }
+
+    /* ---- menu mobile ---- */
+    function toggleMenu(open) {
+      $("sidebar").classList.toggle("open", open);
+      $("scrim").classList.toggle("show", open);
+    }
 
     /* ---- navegação ---- */
+    const CRUMBS = { clientes: "Clientes", scripts: "Catálogo de Scripts", token: "Tokens", auditoria: "Auditoria", frota: "Saúde da Frota" };
     function switchTab(name) {
-      document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+      document.querySelectorAll(".navitem").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
       document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
+      $("crumb").textContent = CRUMBS[name] || name;
+      toggleMenu(false);
       if (name === "scripts") loadScripts();
       if (name === "token") fillClienteSelect();
       if (name === "auditoria") { fillAuditSelect(); loadAuditoria(); }
     }
-    async function refreshAll() { await loadClientes(); toast("Atualizado", "ok"); }
+    async function refreshAll() { await loadClientes(); toast("Frota atualizada", "ok"); }
 
     /* ---- CLIENTES ---- */
     async function loadClientes() {
       try {
         const { data } = await api("/api/v1/admin/tenants/health");
         state.tenants = data; setConn(true);
-        $("clientes-count").textContent = data.length + " cliente(s)";
+        const counts = data.reduce((a, t) => (a[t.status_geral] = (a[t.status_geral] || 0) + 1, a), {});
+        $("clientes-count").innerHTML = `${data.length} cliente(s) · `
+          + `<span style="color:var(--green)">● ${counts.verde||0} ok</span> · `
+          + `<span style="color:var(--amber)">● ${counts.amarelo||0} atenção</span> · `
+          + `<span style="color:var(--red)">● ${counts.vermelho||0} crítico</span>`;
         $("grid").innerHTML = data.map(t => `
           <div class="card click" onclick="openCliente('${t.slug}')">
             <div class="name"><span class="dot ${t.status_geral} ${t.status_geral==='vermelho'?'pulse':''}"></span>${esc(t.nome)}</div>
             <div class="slug">${esc(t.slug)}</div>
             <div class="meta">
-              <span class="muted">últ. manutenção: ${t.ultima_manutencao ? esc(t.ultima_manutencao.script_nome)+" · "+t.ultima_manutencao.status : "nenhuma"}</span>
-              <span class="muted">backup: ${t.ultimo_backup ? "ok" : "nunca"}</span>
+              <div class="row"><span class="k">Últ. manutenção</span><span class="v">${t.ultima_manutencao ? esc(t.ultima_manutencao.script_nome)+" · "+t.ultima_manutencao.status : "—"}</span></div>
+              <div class="row"><span class="k">Backup</span><span class="v">${t.ultimo_backup ? "ok" : "nunca"}</span></div>
             </div>
           </div>`).join("") || `<div class="empty">Nenhum cliente. Clique em "Provisionar cliente".</div>`;
       } catch (e) { setConn(false); $("grid").innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
@@ -298,13 +560,13 @@
         $("dr-scripts").innerHTML = data.map(s => {
           const ps = s.parametros_schema || [];
           const inputs = ps.length
-            ? ps.map(p => `<input id="p-${s.script_id}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:140px" />`).join("")
-            : `<input id="p-${s.script_id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
+            ? ps.map(p => `<input id="p-${s.script_id || s.id}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:150px" />`).join("")
+            : `<input id="p-${s.script_id || s.id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
           return `
           <div class="exec-row">
             <span class="nm">${esc(s.nome)}</span>
             ${inputs}
-            <button class="btn sm" onclick="runScript(${s.script_id}, ${ps.length})">executar</button>
+            <button class="btn sm" onclick="runScript(${s.script_id || s.id}, ${ps.length})">executar</button>
           </div>`;
         }).join("") || `<div class="muted">Sem scripts vinculados.</div>`;
       } catch (e) { $("dr-scripts").innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
@@ -331,12 +593,12 @@
     async function loadDrawerLogs() {
       try {
         const { data } = await api(`/api/v1/tenants/${state.current}/logs`);
-        $("dr-logs").innerHTML = data.slice(0, 8).map(l => `
-          <div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
+        $("dr-logs").innerHTML = `<div class="tl">` + data.slice(0, 8).map(l => `
+          <div class="tl-item">
             <span class="badge ${l.status==='sucesso'?'ok':l.status==='falha'?'fail':'neutral'}">${esc(l.status||l.tipo)}</span>
-            <span class="muted mono">${esc((l.ocorrido_em||'').replace('T',' ').slice(0,19))}</span>
-            <span style="font-size:12.5px">${esc(l.script_nome||l.tipo)}</span>
-          </div>`).join("") || `<div class="muted">Sem registros.</div>`;
+            <span class="tl-when">${esc((l.ocorrido_em||'').replace('T',' ').slice(0,19))}</span>
+            <span class="tl-name">${esc(l.script_nome||l.tipo)}</span>
+          </div>`).join("") + `</div>` || `<div class="muted">Sem registros.</div>`;
       } catch (_) {}
     }
 
@@ -360,7 +622,7 @@
         <div id="pv-cred" class="card" style="display:none;border-color:var(--green);margin-top:12px"></div>
       `, [
         { label: "Cancelar", cls: "ghost", act: closeModal },
-        { label: "Provisionar", cls: "", id: "pv-btn", act: submitProvision },
+        { label: "Provisionar", cls: "accent", id: "pv-btn", act: submitProvision },
       ]);
     }
     async function submitProvision() {
@@ -411,7 +673,7 @@
             <td class="muted">${esc((s.parametros_schema||[]).map(p=>p.nome).join(", ") || s.parametros || '—')}</td>
             <td class="muted">${esc(s.descricao||'—')}</td>
             <td><span class="badge neutral">${esc(s.categoria)}</span></td>
-            <td class="muted">${s.tenant_id ? esc((state.tenantsMeta.find(t=>t.id===s.tenant_id)||{}).nome || ("#"+s.tenant_id)) : "Global"}</td>
+            <td>${s.tenant_id ? `<span class="badge gold">${esc((state.tenantsMeta.find(t=>t.id===s.tenant_id)||{}).nome || ("#"+s.tenant_id))}</span>` : `<span class="muted">Global</span>`}</td>
             <td><label class="switch"><input type="checkbox" ${s.ativo?'checked':''} onchange="toggleScript(${s.id}, this.checked)"><span class="slider"></span></label></td>
             <td><button class="btn ghost sm" onclick='openScript(${s.id})'>Editar</button></td>
           </tr>`).join("") || `<tr><td colspan="8" class="empty">Catálogo vazio.</td></tr>`;
@@ -540,7 +802,7 @@
       try {
         const res = await fetch("/api/v1/config"); const { data } = await res.json();
         if (data && data.grafana_url) {
-          state.grafana = data.grafana_url; $("tab-frota").style.display = "";
+          state.grafana = data.grafana_url; $("tab-frota").style.display = ""; $("lbl-obs").style.display = "";
           $("grafana-frame").src = `${data.grafana_url}/d/isyone-fleet?kiosk&refresh=10s&theme=light`;
         }
       } catch (_) {}

@@ -34,6 +34,9 @@ venv/
 # Prototipos de skills (nao versionar)
 .od-skills/
 
+# Artefatos do pipeline de design (nao versionar)
+app/static/*.artifact.json
+
 # Logs
 *.log
 npm-debug.log*
