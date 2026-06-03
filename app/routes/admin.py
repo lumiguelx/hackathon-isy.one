@@ -47,28 +47,32 @@ def _script_out(s) -> dict:
     return out
 
 
-@router.get("/tenants")
+@router.get("/tenants", summary="Listar clientes")
 def list_tenants(db: Session = Depends(get_db)) -> dict:
+    """Lista todos os clientes (tenants) cadastrados na plataforma."""
     return ok([_tenant_out(t) for t in tenants_repo.list_all(db)])
 
 
-@router.post("/tenants", status_code=status.HTTP_201_CREATED)
+@router.post("/tenants", status_code=status.HTTP_201_CREATED, summary="Cadastrar cliente")
 def create_tenant(body: TenantCreate, db: Session = Depends(get_db)) -> dict:
+    """Cadastra um novo cliente; falha com 409 se o slug ja existir."""
     if tenants_repo.get_by_slug(db, body.slug):
         raise HTTPException(status.HTTP_409_CONFLICT, "Slug ja existe.")
     return ok(_tenant_out(tenants_repo.create(db, body)), "Cliente cadastrado.")
 
 
-@router.put("/tenants/{slug}")
+@router.put("/tenants/{slug}", summary="Atualizar cliente")
 def update_tenant(slug: str, body: TenantUpdate, db: Session = Depends(get_db)) -> dict:
+    """Atualiza os dados de um cliente existente, identificado pelo slug."""
     tenant = tenants_repo.get_by_slug(db, slug)
     if tenant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
     return ok(_tenant_out(tenants_repo.update(db, tenant, body)), "Cliente atualizado.")
 
 
-@router.delete("/tenants/{slug}")
+@router.delete("/tenants/{slug}", summary="Desprovisionar e remover cliente")
 def delete_tenant(slug: str, db: Session = Depends(get_db)) -> dict:
+    """Desprovisiona o servidor do cliente (se houver) e remove o cadastro."""
     tenant = tenants_repo.get_by_slug(db, slug)
     if tenant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
@@ -79,23 +83,26 @@ def delete_tenant(slug: str, db: Session = Depends(get_db)) -> dict:
     return ok(message="Cliente desprovisionado e removido.")
 
 
-@router.get("/scripts")
+@router.get("/scripts", summary="Listar catalogo de scripts")
 def list_scripts(db: Session = Depends(get_db)) -> dict:
+    """Lista o catalogo completo de scripts, com o schema de parametros de cada um."""
     return ok([_script_out(s) for s in scripts_repo.list_all(db)])
 
 
-@router.post("/scripts", status_code=status.HTTP_201_CREATED)
+@router.post("/scripts", status_code=status.HTTP_201_CREATED, summary="Cadastrar script")
 def create_script(body: ScriptCreate, db: Session = Depends(get_db)) -> dict:
+    """Cadastra um script no catalogo (tipo arquivo ou template)."""
     try:
         return ok(_script_out(script_service.create(db, body)), "Script cadastrado.")
     except script_service.ScriptValidationError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
 
-@router.put("/scripts/{script_id}")
+@router.put("/scripts/{script_id}", summary="Atualizar script")
 def update_script(
     script_id: int, body: ScriptUpdate, db: Session = Depends(get_db)
 ) -> dict:
+    """Atualiza um script do catalogo (patch parcial), validando a coerencia tipo/conteudo."""
     script = scripts_repo.get(db, script_id)
     if script is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Script nao encontrado.")
@@ -107,10 +114,11 @@ def update_script(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
 
-@router.put("/tenants/{slug}/scripts")
+@router.put("/tenants/{slug}/scripts", summary="Vincular script a um cliente")
 def bind_script(
     slug: str, body: TenantScriptBinding, db: Session = Depends(get_db)
 ) -> dict:
+    """Vincula um script a um cliente; bloqueia scripts exclusivos de outro tenant."""
     tenant = tenants_repo.get_by_slug(db, slug)
     if tenant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
@@ -131,16 +139,18 @@ def bind_script(
     )
 
 
-@router.put("/token")
+@router.put("/token", summary="Rotacionar token admin")
 def rotate_admin_token(body: TokenUpdate, db: Session = Depends(get_db)) -> dict:
+    """Substitui o token de admin por um novo valor."""
     config_repo.set_token(db, body.token)
     return ok(message="Token admin rotacionado.")
 
 
-@router.put("/tenants/{slug}/token")
+@router.put("/tenants/{slug}/token", summary="Rotacionar token do cliente")
 def rotate_tenant_token(
     slug: str, body: TokenUpdate, db: Session = Depends(get_db)
 ) -> dict:
+    """Rotaciona o token de acesso de um cliente especifico e audita a troca."""
     tenant = tenants_repo.get_by_slug(db, slug)
     if tenant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente nao encontrado.")
@@ -149,7 +159,8 @@ def rotate_tenant_token(
     return ok(message="Token do cliente rotacionado.")
 
 
-@router.get("/tenants/health")
+@router.get("/tenants/health", summary="Dashboard de saude da frota")
 def dashboard(db: Session = Depends(get_db)) -> dict:
+    """Calcula e retorna a saude de toda a frota de clientes para o dashboard."""
     saudes = [health_service.calcular_saude(db, t) for t in tenants_repo.list_all(db)]
     return ok(saudes)

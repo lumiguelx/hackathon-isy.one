@@ -24,10 +24,38 @@ async def lifespan(app: FastAPI):
     yield
 
 
+_DESCRIPTION = """
+Execucao controlada e auditada de shell scripts de manutencao em servidores de
+clientes (multi-tenant), sem SSH manual.
+
+## Autenticacao
+
+Todas as rotas protegidas usam o header **`X-Isy-Token`**. Clique em **Authorize**
+e informe o token:
+
+- **Admin** (gestao de tenants, catalogo e bindings): abre todas as rotas.
+- **Cliente** (token do proprio tenant): acessa apenas os recursos daquele cliente.
+
+## Envelope de resposta
+
+Toda resposta segue o formato `{ "status": "success" | "error", "data": ..., "message": "..." }`.
+"""
+
+_TAGS = [
+    {"name": "health", "description": "Liveness e config publica do painel (sem token)."},
+    {"name": "Self-service", "description": "Cadastro publico que provisiona o cliente sozinho (SSE)."},
+    {"name": "Administracao", "description": "Gestao de tenants, catalogo de scripts, bindings e tokens. Exige token admin."},
+    {"name": "Cliente", "description": "Operacao por cliente: scripts disponiveis, execucao, logs e saude."},
+]
+
 app = FastAPI(
     title="Isy.One Shell Automation API",
     version="1.0.0",
-    description="Execucao controlada e auditada de shell scripts de manutencao.",
+    description=_DESCRIPTION,
+    summary="API de automacao de shell multi-tenant com execucao auditada.",
+    openapi_tags=_TAGS,
+    contact={"name": "Isy.One", "url": "https://isy.one/hackaton/"},
+    license_info={"name": "Proprietario"},
     lifespan=lifespan,
 )
 

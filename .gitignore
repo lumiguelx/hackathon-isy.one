@@ -29,6 +29,10 @@ venv/
 # Banco local (SQLite)
 *.db
 *.sqlite3
+*.db.bak-*
+
+# Prototipos de skills (nao versionar)
+.od-skills/
 
 # Logs
 *.log

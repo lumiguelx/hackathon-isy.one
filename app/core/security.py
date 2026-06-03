@@ -9,7 +9,8 @@ Comparacao em tempo constante (compare_digest) para evitar timing attack.
 import secrets
 from pathlib import Path
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -17,9 +18,19 @@ from app.core.db import get_db
 from app.models import Tenant
 from app.repositories import config_repo, tenants_repo
 
+# Declara o X-Isy-Token como esquema de seguranca: liga o botao "Authorize" no
+# Swagger e o cadeado nas rotas protegidas. auto_error=False para mantermos as
+# mensagens de erro proprias (401 com texto em pt-br) em vez do default do FastAPI.
+api_key_header = APIKeyHeader(
+    name="X-Isy-Token",
+    auto_error=False,
+    scheme_name="X-Isy-Token",
+    description="Token de autenticacao (admin ou do proprio cliente).",
+)
+
 
 def verify_admin(
-    x_isy_token: str = Header(default=""),
+    x_isy_token: str | None = Security(api_key_header),
     db: Session = Depends(get_db),
 ) -> None:
     admin = config_repo.get_token(db)
@@ -31,7 +42,7 @@ def verify_admin(
 
 def verify_tenant(
     slug: str,
-    x_isy_token: str = Header(default=""),
+    x_isy_token: str | None = Security(api_key_header),
     db: Session = Depends(get_db),
 ) -> Tenant:
     tenant = tenants_repo.get_by_slug(db, slug)
