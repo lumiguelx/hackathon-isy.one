@@ -50,6 +50,7 @@ _MIGRACOES: dict[str, dict[str, str]] = {
     "scripts": {
         "tipo": "VARCHAR(20) NOT NULL DEFAULT 'arquivo'",
         "template": "VARCHAR(2000)",
+        "param_schema": "JSON",
     },
 }
 

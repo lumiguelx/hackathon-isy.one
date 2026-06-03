@@ -41,5 +41,12 @@ class Settings(BaseSettings):
     self_service_ssh_host: str = ""
     self_service_ssh_port: int = 22
 
+    # SSH do cliente de demo (caixa AWS); setado, o seed liga o docker_ctl real.
+    demo_ssh_host: str = ""
+    demo_ssh_port: int = 22
+
+    # Habilita gravar o codigo do .sh pela UI (sensivel: codigo executavel em disco).
+    script_edit_enabled: bool = False
+
 
 settings = Settings()

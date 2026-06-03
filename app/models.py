@@ -30,6 +30,8 @@ class Script(Base):
     tipo: Mapped[str] = mapped_column(String(20), default="arquivo")
     template: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     parametros: Mapped[str] = mapped_column(String(255), default="")
+    # Parametros estruturados (lista de ParamSpec): tipo, arg, faixa, choices, etc.
+    param_schema: Mapped[list] = mapped_column(JSON, default=list)
     descricao: Mapped[str] = mapped_column(String(255), default="")
     categoria: Mapped[str] = mapped_column(String(20), default="other")
     tenant_id: Mapped[int | None] = mapped_column(

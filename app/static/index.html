@@ -174,6 +174,14 @@
     .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--royal); box-shadow: 0 0 0 3px rgba(16,28,134,.12); }
     .field .hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
     .field.invalid input { border-color: var(--red); }
+    .param-card { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 12px; margin-bottom: 8px; background: var(--surface-2); }
+    .param-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .param-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 12px; }
+    .param-grid > label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--text-2); font-weight: 500; }
+    .param-grid > label.chk { flex-direction: row; align-items: center; gap: 6px; font-size: 12px; }
+    .param-grid input, .param-grid select { padding: 7px 9px; font-size: 12.5px; }
+    .param-grid label.chk input { width: auto; }
+    .exec-row label.chk { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-2); }
 
     /* ---------- modal ---------- */
     .overlay { position: fixed; inset: 0; background: rgba(1,1,40,.5); display: none; align-items: flex-start; justify-content: center; z-index: 50; padding: 48px 16px; overflow: auto; backdrop-filter: blur(2px); }
@@ -559,16 +567,20 @@
       $("drawer").classList.add("show");
       try {
         const { data } = await api(`/api/v1/tenants/${slug}/scripts`);
+        state.runScripts = data;
         $("dr-scripts").innerHTML = data.map(s => {
-          const ps = s.parametros_schema || [];
-          const inputs = ps.length
-            ? ps.map(p => `<input id="p-${s.script_id || s.id}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:150px" />`).join("")
-            : `<input id="p-${s.script_id || s.id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
+          const id = s.script_id || s.id;
+          const structured = (s.param_schema || []).filter(p => !p.env && !p.constante);
+          const legacy = s.parametros_schema || [];
+          let inputs;
+          if (structured.length) inputs = structured.map(p => paramInput(id, p)).join("");
+          else if (legacy.length) inputs = legacy.map(p => `<input id="p-${id}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:150px" />`).join("");
+          else inputs = `<input id="p-${id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
           return `
           <div class="exec-row">
             <span class="nm">${esc(s.nome)}</span>
             ${inputs}
-            <button class="btn sm" onclick="runScript(${s.script_id || s.id}, ${ps.length})">executar</button>
+            <button class="btn sm" onclick="runScript(${id})">executar</button>
           </div>`;
         }).join("") || `<div class="muted">Sem scripts vinculados.</div>`;
       } catch (e) { $("dr-scripts").innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
@@ -576,17 +588,38 @@
     }
     function closeDrawer() { $("drawer").classList.remove("show"); state.current = null; }
 
-    async function runScript(sid, nparams) {
-      let parametros;
-      if (nparams) {
-        parametros = Array.from(document.querySelectorAll(`[id^="p-${sid}-"]`)).map(c => c.value.trim());
+    function paramInput(id, p) {
+      const key = `ps-${id}-${esc(p.nome)}`, ph = esc(p.rotulo || p.nome);
+      if (p.tipo === "select")
+        return `<select id="${key}" title="${ph}" style="max-width:150px">${(p.choices||[]).map(c=>`<option ${String(p.default)===c?'selected':''}>${esc(c)}</option>`).join("")}</select>`;
+      if (p.tipo === "bool")
+        return `<label class="chk" title="${ph}"><input type="checkbox" id="${key}" ${p.default==='true'?'checked':''}> ${ph}</label>`;
+      if (p.tipo === "int")
+        return `<input id="${key}" type="number" ${p.minimo!=null?`min="${p.minimo}"`:''} ${p.maximo!=null?`max="${p.maximo}"`:''} value="${esc(p.default||'')}" placeholder="${ph}" style="max-width:120px" />`;
+      return `<input id="${key}" type="${p.secret?'password':'text'}" value="${esc(p.default||'')}" placeholder="${ph}" style="max-width:150px" />`;
+    }
+
+    async function runScript(sid) {
+      const s = (state.runScripts || []).find(x => (x.script_id || x.id) === sid) || {};
+      const structured = (s.param_schema || []).filter(p => !p.env && !p.constante);
+      let body;
+      if (structured.length) {
+        const valores = {};
+        structured.forEach(p => {
+          const el = $(`ps-${sid}-${p.nome}`);
+          if (!el) return;
+          valores[p.nome] = p.tipo === "bool" ? (el.checked ? "true" : "false") : el.value.trim();
+        });
+        body = { valores };
+      } else if ((s.parametros_schema || []).length) {
+        body = { parametros: Array.from(document.querySelectorAll(`[id^="p-${sid}-"]`)).map(c => c.value.trim()) };
       } else {
         const raw = ($(`p-${sid}`)?.value || "").trim();
-        parametros = raw ? raw.split(/\s+/) : [];
+        body = { parametros: raw ? raw.split(/\s+/) : [] };
       }
       $("dr-out").textContent = "Executando...";
       try {
-        const { data } = await api(`/api/v1/tenants/${state.current}/scripts/${sid}/run`, { method: "POST", body: JSON.stringify({ parametros }) });
+        const { data } = await api(`/api/v1/tenants/${state.current}/scripts/${sid}/run`, { method: "POST", body: JSON.stringify(body) });
         $("dr-out").textContent = `# ${data.status} (exit ${data.exit_code}) · ${data.duracao_ms}ms\n\n` + (data.stdout || "") + (data.stderr ? "\n[stderr]\n" + data.stderr : "");
         toast(data.status === "sucesso" ? "Executado com sucesso" : "Script retornou falha", data.status === "sucesso" ? "ok" : "err");
         loadDrawerLogs(); loadClientes();
@@ -672,7 +705,7 @@
           <tr>
             <td><strong>${esc(s.nome)}</strong></td>
             <td class="mono" style="font-size:12px">${s.tipo === "template" ? esc(s.template || "") : esc(s.caminho)}</td>
-            <td class="muted">${esc((s.parametros_schema||[]).map(p=>p.nome).join(", ") || s.parametros || '—')}</td>
+            <td class="muted">${esc((s.param_schema||[]).map(p=>p.nome).join(", ") || (s.parametros_schema||[]).map(p=>p.nome).join(", ") || '—')}</td>
             <td class="muted">${esc(s.descricao||'—')}</td>
             <td><span class="badge neutral">${esc(s.categoria)}</span></td>
             <td>${s.tenant_id ? `<span class="badge gold">${esc((state.tenantsMeta.find(t=>t.id===s.tenant_id)||{}).nome || ("#"+s.tenant_id))}</span>` : `<span class="muted">Global</span>`}</td>
@@ -681,11 +714,15 @@
           </tr>`).join("") || `<tr><td colspan="8" class="empty">Catálogo vazio.</td></tr>`;
       } catch (e) { setConn(false); $("scripts-body").innerHTML = `<tr><td colspan="8" class="empty">${esc(e.message)}</td></tr>`; }
     }
+    let editParams = [];
     function openScript(id) {
       const s = id ? state.scripts.find(x => x.id === id) : null;
+      editParams = (s?.param_schema || []).map(p => ({ ...p }));
       const tenantsOpts = ['<option value="">Global</option>']
         .concat(state.tenantsMeta.map(t => `<option value="${t.id}" ${s?.tenant_id===t.id?'selected':''}>${esc(t.nome)}</option>`))
         .join("");
+      const codeBtn = (s && s.tipo !== "template")
+        ? `<button class="btn ghost sm" type="button" onclick="openCodeEditor(${id})" style="margin-top:6px">Editar código</button>` : "";
       modal(s ? "Editar script" : "Novo script", `
         <div class="field"><label>Nome *</label><input id="sc-nome" value="${esc(s?.nome||'')}" placeholder="ex.: reinicia-agente" /></div>
         <div class="field"><label>Tipo</label>
@@ -693,7 +730,7 @@
             <option value="arquivo" ${s?.tipo!=='template'?'selected':''}>Arquivo (.sh no volume)</option>
             <option value="template" ${s?.tipo==='template'?'selected':''}>Template</option>
           </select></div>
-        <div class="field" id="campo-arquivo"><label>Arquivo (.sh) *</label><input id="sc-caminho" value="${esc(s?.caminho||'')}" placeholder="cleanup_logs.sh" class="mono" /></div>
+        <div class="field" id="campo-arquivo"><label>Arquivo (.sh) *</label><input id="sc-caminho" value="${esc(s?.caminho||'')}" placeholder="cleanup_logs.sh" class="mono" />${codeBtn}</div>
         <div class="field" id="campo-template"><label>Template *</label>
           <textarea id="sc-template" rows="3" class="mono" placeholder="docker restart {{container:agent}}">${esc(s?.template||'')}</textarea>
           <div class="muted" style="font-size:11px">Placeholders: {{slug}} {{container:db|odoo|agent}} {{db}} {{logdir}} {{param:nome:int|slug}}</div></div>
@@ -701,27 +738,90 @@
         <div class="field"><label>Descrição curta</label><input id="sc-desc" value="${esc(s?.descricao||'')}" /></div>
         <div class="field"><label>Categoria</label>
           <select id="sc-cat">${["cleanup","backup","update","status","provision","other"].map(c=>`<option ${s?.categoria===c?'selected':''}>${c}</option>`).join("")}</select></div>
+        <div class="field"><label>Parâmetros</label>
+          <div id="param-list"></div>
+          <button class="btn ghost sm" type="button" onclick="addParam()" style="margin-top:8px">+ parâmetro</button></div>
         <div class="field" style="display:flex;align-items:center;gap:8px"><label style="margin:0">Ativo</label>
           <label class="switch"><input id="sc-ativo" type="checkbox" ${s?(s.ativo?'checked':''):'checked'}><span class="slider"></span></label></div>
       `, [
         { label: "Cancelar", cls: "ghost", act: closeModal },
         { label: s ? "Salvar" : "Cadastrar", cls: "", act: () => saveScript(id) },
       ]);
+      const m = document.querySelector(".modal"); if (m) m.style.maxWidth = "780px";
       toggleTipoCampos();
+      renderParams();
     }
     function toggleTipoCampos() {
       const t = $("sc-tipo").value;
       $("campo-arquivo").style.display = t === "arquivo" ? "" : "none";
       $("campo-template").style.display = t === "template" ? "" : "none";
     }
+
+    /* ---- editor de parametros estruturados ---- */
+    const PARAM_TIPOS = ["text", "int", "select", "bool"];
+    function addParam() { editParams.push({ nome: "", tipo: "text", arg: "", default: "", obrigatorio: false, secret: false, choices: [] }); renderParams(); }
+    function removeParam(i) { editParams.splice(i, 1); renderParams(); }
+    function moveParam(i, d) { const j = i + d; if (j < 0 || j >= editParams.length) return; [editParams[i], editParams[j]] = [editParams[j], editParams[i]]; renderParams(); }
+    function setParam(i, f, v, re) { editParams[i][f] = v; if (re) renderParams(); }
+    function renderParams() {
+      const box = $("param-list"); if (!box) return;
+      box.innerHTML = editParams.map((p, i) => `
+        <div class="param-card">
+          <div class="param-head">
+            <strong>${esc(p.nome || "(sem nome)")}</strong><span class="muted" style="font-size:11px">${esc(p.tipo)}</span>
+            <span style="margin-left:auto;display:flex;gap:4px">
+              <button class="btn ghost sm" type="button" onclick="moveParam(${i},-1)">↑</button>
+              <button class="btn ghost sm" type="button" onclick="moveParam(${i},1)">↓</button>
+              <button class="btn danger sm" type="button" onclick="removeParam(${i})">remover</button>
+            </span>
+          </div>
+          <div class="param-grid">
+            <label>Nome<input value="${esc(p.nome||'')}" onchange="setParam(${i},'nome',this.value)"></label>
+            <label>Tipo<select onchange="setParam(${i},'tipo',this.value,true)">${PARAM_TIPOS.map(t=>`<option ${p.tipo===t?'selected':''}>${t}</option>`).join("")}</select></label>
+            <label>Arg<input value="${esc(p.arg||'')}" placeholder="--flag" onchange="setParam(${i},'arg',this.value)"></label>
+            <label>Default<input value="${esc(p.default||'')}" onchange="setParam(${i},'default',this.value)"></label>
+            ${p.tipo==='int' ? `<label>Min<input type="number" value="${p.minimo??''}" onchange="setParam(${i},'minimo',this.value===''?null:parseInt(this.value,10))"></label><label>Max<input type="number" value="${p.maximo??''}" onchange="setParam(${i},'maximo',this.value===''?null:parseInt(this.value,10))"></label>` : ""}
+            ${p.tipo==='select' ? `<label style="grid-column:1/-1">Opções (vírgula)<input value="${esc((p.choices||[]).join(','))}" onchange="setParam(${i},'choices',this.value.split(',').map(x=>x.trim()).filter(Boolean))"></label>` : ""}
+            <label>Env<input value="${esc(p.env||'')}" placeholder="ISY_X" onchange="setParam(${i},'env',this.value)"></label>
+            <label>Constante<input value="${esc(p.constante||'')}" onchange="setParam(${i},'constante',this.value)"></label>
+            <label class="chk"><input type="checkbox" ${p.obrigatorio?'checked':''} onchange="setParam(${i},'obrigatorio',this.checked)"> obrigatório</label>
+            <label class="chk"><input type="checkbox" ${p.secret?'checked':''} onchange="setParam(${i},'secret',this.checked)"> secret</label>
+            ${p.tipo==='bool' ? `<label class="chk"><input type="checkbox" ${p.sem_valor?'checked':''} onchange="setParam(${i},'sem_valor',this.checked)"> flag sem valor</label>` : ""}
+          </div>
+        </div>`).join("") || `<div class="muted" style="font-size:12px">Nenhum parâmetro. Use "+ parâmetro" para adicionar.</div>`;
+    }
+
+    /* ---- editor de codigo inline (Modulo 2) ---- */
+    async function openCodeEditor(id) {
+      try {
+        const { data } = await api(`/api/v1/admin/scripts/${id}/source`);
+        modal(`Código — ${esc(data.caminho)}`, `
+          <div class="field"><textarea id="code-src" class="mono" rows="18" spellcheck="false" style="font-size:12.5px;line-height:1.5">${esc(data.conteudo)}</textarea></div>
+          <div class="muted" style="font-size:11px">Grava em ${esc(data.caminho)} no servidor (precisa de ISY_SCRIPT_EDIT_ENABLED).</div>
+        `, [
+          { label: "Voltar", cls: "ghost", act: () => openScript(id) },
+          { label: "Salvar código", cls: "", act: () => saveCode(id) },
+        ]);
+        const m = document.querySelector(".modal"); if (m) m.style.maxWidth = "820px";
+      } catch (e) { toast(e.message, "err"); }
+    }
+    async function saveCode(id) {
+      try {
+        await api(`/api/v1/admin/scripts/${id}/source`, { method: "PUT", body: JSON.stringify({ conteudo: $("code-src").value }) });
+        toast("Código salvo", "ok"); openScript(id);
+      } catch (e) { toast(e.message, "err"); }
+    }
+
     async function saveScript(id) {
       const tipo = $("sc-tipo").value;
+      const param_schema = editParams.filter(p => (p.nome || "").trim());
       const body = {
         nome: $("sc-nome").value.trim(), tipo,
         caminho: tipo === "arquivo" ? $("sc-caminho").value.trim() : "",
         template: tipo === "template" ? $("sc-template").value.trim() : null,
         descricao: $("sc-desc").value.trim(),
         categoria: $("sc-cat").value, ativo: $("sc-ativo").checked,
+        param_schema,
       };
       if (!id) { const dono = $("sc-dono").value; if (dono) body.tenant_id = parseInt(dono, 10); }
       if (!body.nome || (tipo === "arquivo" && !body.caminho) || (tipo === "template" && !body.template)) {

@@ -28,6 +28,7 @@ def list_scripts(
             "descricao": s.descricao,
             "tipo": s.tipo,
             "parametros_default": b.parametros_default,
+            "param_schema": s.param_schema or [],
             "parametros_schema": (
                 template_service.extract_params(s.template)
                 if s.tipo == "template" and s.template
@@ -64,7 +65,9 @@ def run_script(
         )
 
     try:
-        event = execution_service.run(db, tenant, script, parametros)
+        event = execution_service.run(
+            db, tenant, script, parametros, valores=body.valores or None
+        )
     except execution_service.ScriptNotExecutable as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 

@@ -18,7 +18,7 @@ from app.core.config import settings
 from app.core.security import ScriptPathError, resolve_script_path
 from app.models import Event, Script, Tenant
 from app.repositories import events_repo
-from app.services import alert_service, template_service
+from app.services import alert_service, command, template_service
 
 
 class ScriptNotExecutable(RuntimeError):
@@ -65,11 +65,12 @@ def _record(
     stderr: str,
     exit_code: int | None,
     duracao_ms: int,
+    audit_params: str | None = None,
 ) -> Event:
     payload = {
         "script_nome": script.nome,
         "categoria": script.categoria,
-        "parametros": " ".join(parametros),
+        "parametros": audit_params if audit_params is not None else " ".join(parametros),
         "status": status,
         "exit_code": exit_code,
         "stdout": stdout[: settings.output_limit],
@@ -104,7 +105,13 @@ def _run_template(
     return "sucesso", f"[local simulado] {rendered}\nOK (simulado).", "", 0
 
 
-def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> Event:
+def run(
+    db: Session,
+    tenant: Tenant,
+    script: Script,
+    parametros: list[str],
+    valores: dict | None = None,
+) -> Event:
     if script.tipo == "template":
         started = time.perf_counter()
         try:
@@ -132,8 +139,21 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
 
     # shell=False (default): cada item da lista e um argv isolado, sem interpretacao
     # de metacaracteres de shell. Esta e a barreira contra command injection.
-    parametros = _effective_params(tenant, script, parametros)
-    argv = [str(path), *parametros]
+    env = _build_env(tenant)
+    audit_params: str | None = None
+    if valores is not None and script.param_schema:
+        # Caminho estruturado: monta argv/env a partir do param_schema (validado).
+        try:
+            argv_extra, env_extra, audit_params = command.build_invocation(
+                script, valores
+            )
+        except command.ParamError as exc:
+            raise ScriptNotExecutable(str(exc)) from exc
+        env = {**env, **env_extra}
+        argv = [str(path), *argv_extra]
+    else:
+        parametros = _effective_params(tenant, script, parametros)
+        argv = [str(path), *parametros]
     started = time.perf_counter()
     try:
         proc = subprocess.run(
@@ -142,7 +162,7 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
             text=True,
             timeout=settings.exec_timeout,
             check=False,
-            env=_build_env(tenant),
+            env=env,
         )
         duracao_ms = int((time.perf_counter() - started) * 1000)
         status = "sucesso" if proc.returncode == 0 else "falha"
@@ -152,7 +172,8 @@ def run(db: Session, tenant: Tenant, script: Script, parametros: list[str]) -> E
         status, exit_code = "falha", None
         stdout, stderr = "", f"Tempo limite de {settings.exec_timeout}s excedido."
     return _record(
-        db, tenant, script, parametros, status, stdout, stderr, exit_code, duracao_ms
+        db, tenant, script, parametros, status, stdout, stderr, exit_code,
+        duracao_ms, audit_params,
     )
 
 

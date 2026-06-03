@@ -17,6 +17,7 @@ from app.repositories import (
 from app.schemas import (
     ScriptCreate,
     ScriptOut,
+    ScriptSource,
     ScriptUpdate,
     TenantCreate,
     TenantOut,
@@ -112,6 +113,36 @@ def update_script(
         )
     except script_service.ScriptValidationError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+
+
+@router.get("/scripts/{script_id}/source", summary="Ler codigo do script")
+def get_script_source(script_id: int, db: Session = Depends(get_db)) -> dict:
+    """Le o codigo do .sh/.py do script para o editor inline."""
+    script = scripts_repo.get(db, script_id)
+    if script is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Script nao encontrado.")
+    try:
+        conteudo = script_service.read_source(script)
+    except script_service.ScriptValidationError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    return ok({"caminho": script.caminho, "conteudo": conteudo})
+
+
+@router.put("/scripts/{script_id}/source", summary="Gravar codigo do script")
+def put_script_source(
+    script_id: int, body: ScriptSource, db: Session = Depends(get_db)
+) -> dict:
+    """Grava o codigo do script no diretorio de scripts (atras de flag, path-guarded)."""
+    script = scripts_repo.get(db, script_id)
+    if script is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Script nao encontrado.")
+    try:
+        script_service.write_source(script, body.conteudo)
+    except script_service.ScriptEditDisabled as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
+    except script_service.ScriptValidationError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    return ok(message="Codigo salvo.")
 
 
 @router.put("/tenants/{slug}/scripts", summary="Vincular script a um cliente")

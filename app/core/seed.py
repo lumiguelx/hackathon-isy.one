@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.core import events as ev
+from app.core.config import settings
 from app.repositories import (
     events_repo,
     scripts_repo,
@@ -46,6 +47,41 @@ CATALOGO = [
         caminho="docker_status.sh",
         categoria="status",
         descricao="Status dos containers.",
+    ),
+    ScriptCreate(
+        nome="docker_ctl",
+        caminho="docker_ctl.sh",
+        categoria="status",
+        descricao="Gerencia um container do cliente (status/restart/stop/logs).",
+        param_schema=[
+            {
+                "nome": "acao",
+                "rotulo": "Ação",
+                "tipo": "select",
+                "arg": "--acao",
+                "obrigatorio": True,
+                "default": "status",
+                "choices": ["status", "restart", "stop", "logs"],
+            },
+            {
+                "nome": "papel",
+                "rotulo": "Container",
+                "tipo": "select",
+                "arg": "--papel",
+                "obrigatorio": True,
+                "default": "odoo",
+                "choices": ["db", "odoo", "agent"],
+            },
+            {
+                "nome": "linhas",
+                "rotulo": "Linhas (logs)",
+                "tipo": "int",
+                "arg": "--linhas",
+                "default": "100",
+                "minimo": 1,
+                "maximo": 5000,
+            },
+        ],
     ),
 ]
 
@@ -133,6 +169,9 @@ def seed_demo(db: Session) -> None:
 
     for i in range(1, 6):
         slug = f"cliente-{i}"
+        # cliente-1 e o alvo da demo real: aponta para a caixa AWS quando
+        # ISY_DEMO_SSH_HOST esta setado (senao roda simulado).
+        ssh_host = settings.demo_ssh_host if (i == 1 and settings.demo_ssh_host) else None
         tenant = tenants_repo.create(
             db,
             TenantCreate(
@@ -142,6 +181,8 @@ def seed_demo(db: Session) -> None:
                 porta=8150 + i,
                 db_name=f"db_cliente{i}",
                 token=f"tok-{slug}-000000",
+                ssh_host=ssh_host,
+                ssh_port=settings.demo_ssh_port if ssh_host else None,
             ),
         )
         defaults = {
@@ -150,6 +191,7 @@ def seed_demo(db: Session) -> None:
             "cleanup_logs": "30",
             "update_agent": f"db_cliente{i}",
             "docker_status": f"cliente{i}",
+            "docker_ctl": "",
         }
         for nome, script in scripts.items():
             tenant_scripts_repo.upsert(db, tenant.id, script.id, defaults[nome], True)
