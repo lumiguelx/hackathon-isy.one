@@ -106,6 +106,11 @@
     .view-head h2 { font-size: 23px; }
     .view-head .sub { color: var(--muted); font-size: 13px; margin-top: 3px; }
     .view-head .spacer { flex: 1; }
+    .frota-filter { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .frota-filter label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+    .frota-filter select { padding: 7px 12px; font-size: 13px; border: 1px solid var(--border-strong); border-radius: var(--radius-s);
+      background: var(--surface); color: var(--text); font-family: var(--font); cursor: pointer; }
+    .frota-filter select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(252,180,0,.18); }
 
     /* ---------- buttons ---------- */
     .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border: 1px solid var(--primary);
@@ -482,7 +487,13 @@
 
         <!-- FROTA (Grafana) -->
         <section class="view" id="view-frota">
-          <div class="view-head"><div><h2>Saúde da Frota — Docker em tempo real</h2><div class="sub">OTel + Prometheus + Grafana. Rode <strong>update_agent</strong> ou <strong>cleanup_logs</strong> e veja os painéis reagirem.</div></div></div>
+          <div class="view-head">
+            <div><h2>Saúde da Frota — Docker em tempo real</h2><div class="sub">OTel + Prometheus + Grafana. Rode <strong>update_agent</strong> ou <strong>cleanup_logs</strong> e veja os painéis reagirem.</div></div>
+            <div class="frota-filter">
+              <label for="frota-cliente">Cliente</label>
+              <select id="frota-cliente" onchange="renderFrota()"></select>
+            </div>
+          </div>
           <iframe id="grafana-frame" title="Grafana"></iframe>
         </section>
       </main>
@@ -658,6 +669,7 @@
       if (name === "agendamentos") loadAgendamentos();
       if (name === "token") fillClienteSelect();
       if (name === "auditoria") { fillAuditSelect(); loadAuditoria(); }
+      if (name === "frota") populateFrotaSelect();
     }
     async function refreshAll() { await loadClientes(); toast("Frota atualizada", "ok"); }
 
@@ -1255,9 +1267,27 @@
         const res = await fetch("/api/v1/config"); const { data } = await res.json();
         if (data && data.grafana_url) {
           state.grafana = data.grafana_url; $("tab-frota").style.display = ""; $("lbl-obs").style.display = "";
-          $("grafana-frame").src = `${data.grafana_url}/d/isyone-fleet?kiosk&refresh=10s&theme=light`;
+          populateFrotaSelect();
+          renderFrota();
         }
       } catch (_) {}
+    }
+
+    /* Popula o seletor de cliente da frota: "Todos" + um item por tenant (slug). */
+    function populateFrotaSelect() {
+      const sel = $("frota-cliente");
+      if (!sel) return;
+      const atual = sel.value;
+      sel.innerHTML = `<option value=".*">Todos os clientes</option>`
+        + state.tenants.map(t => `<option value="${esc(t.slug)}">${esc(t.nome)}</option>`).join("");
+      if (atual) sel.value = atual;
+    }
+
+    /* Monta a URL embutida do Grafana com o filtro de cliente selecionado. */
+    function renderFrota() {
+      if (!state.grafana) return;
+      const cliente = ($("frota-cliente") || {}).value || ".*";
+      $("grafana-frame").src = `${state.grafana}/d/isyone-fleet?kiosk&refresh=10s&theme=light&var-cliente=${encodeURIComponent(cliente)}`;
     }
 
     loadConfig();
