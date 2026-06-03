@@ -25,6 +25,26 @@
     .cred { margin-top: 16px; padding: 16px; border: 1px solid var(--verde); background: #f1f8f1; border-radius: 8px; display: none; }
     .cred code { background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cdd; }
     .muted { color: #666; font-size: 12px; }
+
+    /* footer da equipe */
+    .team-footer { background: #0e113a; color: #c8cbe6; border-top: 2px solid #fcb400; padding: 22px 20px; }
+    .team-footer .inner { max-width: 720px; margin: 0 auto; display: flex; align-items: center;
+      justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .team-footer .group { display: grid; gap: 3px; }
+    .team-footer .group .label { font-weight: 800; font-size: 15px; color: #fff;
+      display: flex; align-items: center; gap: 8px; }
+    .team-footer .group .label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fcb400; }
+    .team-footer .group .sub { font-size: 11.5px; color: #9a9fce; }
+    .team-footer .members { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .team-footer .member { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #c8cbe6; }
+    .team-footer .member:hover { color: #fff; }
+    .team-footer .member img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+      border: 2px solid #161a52; background: #0a0d2e; }
+    .team-footer .member:hover img { border-color: #fcb400; }
+    .team-footer .member .nm { font-size: 13px; font-weight: 600; color: #eef0fb; line-height: 1.2; }
+    .team-footer .member .li { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #9a9fce; }
+    .team-footer .member:hover .li { color: #fcb400; }
+    @media (max-width: 640px) { .team-footer .inner { flex-direction: column; align-items: flex-start; } }
   </style>
 </head>
 <body>
@@ -56,6 +76,47 @@
       </div>
     </div>
   </div>
+
+  <footer class="team-footer">
+    <div class="inner">
+      <div class="group">
+        <span class="label">Os Divos</span>
+        <span class="sub">Equipe ISYOPS · Hackathon</span>
+      </div>
+      <div class="members">
+        <a class="member" href="https://www.linkedin.com/in/ana-gabriella-souza-silva-20a5ab241/" target="_blank" rel="noopener">
+          <img src="/ui/brand/team/ana.png" alt="Ana Gabriella" />
+          <span>
+            <span class="nm">Ana Gabriella</span><br />
+            <span class="li">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+              LinkedIn
+            </span>
+          </span>
+        </a>
+        <a class="member" href="https://www.linkedin.com/in/gabriel-reis-3202b823b/" target="_blank" rel="noopener">
+          <img src="/ui/brand/team/gabriel.png" alt="Gabriel Reis" />
+          <span>
+            <span class="nm">Gabriel Reis</span><br />
+            <span class="li">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+              LinkedIn
+            </span>
+          </span>
+        </a>
+        <a class="member" href="https://www.linkedin.com/in/miguel-s-souza/" target="_blank" rel="noopener">
+          <img src="/ui/brand/team/miguel.png" alt="Luis Miguel" />
+          <span>
+            <span class="nm">Luis Miguel</span><br />
+            <span class="li">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+              LinkedIn
+            </span>
+          </span>
+        </a>
+      </div>
+    </div>
+  </footer>
 
   <script>
     const $ = (id) => document.getElementById(id);
