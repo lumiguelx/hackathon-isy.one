@@ -244,10 +244,11 @@
     .sec-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
     .exec-row { display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface);
-      border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 7px; flex-wrap: wrap; }
-    .exec-row .nm { font-weight: 600; min-width: 120px; font-size: 13px; font-family: var(--font-display); }
-    .exec-row input { flex: 1; min-width: 90px; padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 6px; font-size: 12px; font-family: var(--mono); }
-    .exec-row .btn { margin-left: auto; }
+      border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 7px; }
+    .exec-row .nm { font-weight: 600; font-size: 13px; font-family: var(--font-display); }
+    .exec-row .meta { color: var(--muted); font-size: 11px; }
+    .exec-actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+    .exec-actions .btn { min-width: 96px; justify-content: center; }
 
     pre { background: var(--navy-900); color: #b7f5cb; padding: 16px; border-radius: var(--radius-s); white-space: pre-wrap;
       word-break: break-word; font-size: 12px; line-height: 1.6; max-height: 320px; overflow: auto; font-family: var(--mono);
@@ -707,9 +708,11 @@
           <div class="exec-item">
             <div class="exec-row">
               <span class="nm">${esc(s.nome)}</span>
-              <span class="muted" style="font-size:11px">${hint}</span>
-              <button class="btn sm" onclick="runDialog(${id})">executar</button>
-              <button class="btn ghost sm" onclick="scheduleDialog(${id})">${sc ? "reagendar" : "agendar"}</button>
+              <span class="meta">${hint}</span>
+              <span class="exec-actions">
+                <button class="btn sm" onclick="runDialog(${id})">executar</button>
+                <button class="btn ghost sm" onclick="scheduleDialog(${id})">${sc ? "reagendar" : "agendar"}</button>
+              </span>
             </div>
             ${sc ? schedTag(sc) : ""}
           </div>`;
