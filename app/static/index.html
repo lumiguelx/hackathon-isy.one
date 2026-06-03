@@ -174,14 +174,35 @@
     .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--royal); box-shadow: 0 0 0 3px rgba(16,28,134,.12); }
     .field .hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
     .field.invalid input { border-color: var(--red); }
-    .param-card { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 12px; margin-bottom: 8px; background: var(--surface-2); }
-    .param-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-    .param-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 12px; }
-    .param-grid > label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--text-2); font-weight: 500; }
-    .param-grid > label.chk { flex-direction: row; align-items: center; gap: 6px; font-size: 12px; }
-    .param-grid input, .param-grid select { padding: 7px 9px; font-size: 12.5px; }
-    .param-grid label.chk input { width: auto; }
+    .param-card { border: 1px solid var(--border); border-radius: var(--radius-s); margin-bottom: 8px; background: var(--surface); overflow: hidden; }
+    .param-card.open { box-shadow: var(--shadow); border-color: var(--border-strong); }
+    .param-head { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; user-select: none; }
+    .param-card.open .param-head { border-bottom: 1px solid var(--border); background: var(--surface-2); }
+    .param-head:hover { background: var(--surface-2); }
+    .param-head .drag { color: var(--muted-2); display: inline-flex; }
+    .param-head .ptype { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .param-head .req-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+    .param-actions { margin-left: auto; display: flex; gap: 1px; }
+    .param-actions button { border: 0; background: none; cursor: pointer; color: var(--muted); width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
+    .param-actions button:hover { background: var(--surface-2); color: var(--text); }
+    .param-actions button.del:hover { background: var(--red-soft); color: var(--red); }
+    .param-body { padding: 16px 14px; }
+    .pform { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 18px; }
+    .pform > label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); font-weight: 500; }
+    .pform > label.full { grid-column: 1 / -1; }
+    .pform > label.chk { flex-direction: row; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); align-self: end; padding-bottom: 7px; cursor: pointer; }
+    .pform input, .pform select { padding: 8px 10px; font-size: 13px; }
+    .pform label.chk input { width: auto; }
     .exec-row label.chk { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-2); }
+    /* editor de codigo */
+    .code-top { display: flex; align-items: center; gap: 18px; margin-bottom: 12px; flex-wrap: wrap; }
+    .code-top .radio { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); cursor: pointer; }
+    .code-top .radio input { width: auto; }
+    .code-top .syntax { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .code-top .syntax select { width: auto; padding: 6px 10px; }
+    .code-wrap { display: flex; border: 1px solid var(--border-strong); border-radius: var(--radius-xs); overflow: hidden; }
+    .code-gutter { background: var(--surface-2); color: var(--muted-2); text-align: right; padding: 12px 10px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; white-space: pre; overflow: hidden; border-right: 1px solid var(--border); }
+    .code-wrap textarea { border: 0; resize: vertical; padding: 12px 14px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; flex: 1; outline: none; white-space: pre; overflow: auto; color: var(--text); min-height: 380px; }
 
     /* ---------- modal ---------- */
     .overlay { position: fixed; inset: 0; background: rgba(1,1,40,.5); display: none; align-items: flex-start; justify-content: center; z-index: 50; padding: 48px 16px; overflow: auto; backdrop-filter: blur(2px); }
@@ -718,6 +739,7 @@
     function openScript(id) {
       const s = id ? state.scripts.find(x => x.id === id) : null;
       editParams = (s?.param_schema || []).map(p => ({ ...p }));
+      editOpen = -1;
       const tenantsOpts = ['<option value="">Global</option>']
         .concat(state.tenantsMeta.map(t => `<option value="${t.id}" ${s?.tenant_id===t.id?'selected':''}>${esc(t.nome)}</option>`))
         .join("");
@@ -757,53 +779,103 @@
       $("campo-template").style.display = t === "template" ? "" : "none";
     }
 
-    /* ---- editor de parametros estruturados ---- */
+    /* ---- editor de parametros estruturados (cards colapsaveis) ---- */
     const PARAM_TIPOS = ["text", "int", "select", "bool"];
-    function addParam() { editParams.push({ nome: "", tipo: "text", arg: "", default: "", obrigatorio: false, secret: false, choices: [] }); renderParams(); }
-    function removeParam(i) { editParams.splice(i, 1); renderParams(); }
-    function moveParam(i, d) { const j = i + d; if (j < 0 || j >= editParams.length) return; [editParams[i], editParams[j]] = [editParams[j], editParams[i]]; renderParams(); }
+    let editOpen = -1;  // indice do parametro expandido (-1 = nenhum)
+    const _ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    const _ICON_UP = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>';
+    const _ICON_DOWN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+    const _ICON_DRAG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>';
+    function addParam() { editParams.push({ nome: "", tipo: "text", arg: "", default: "", obrigatorio: false, secret: false, choices: [] }); editOpen = editParams.length - 1; renderParams(); }
+    function removeParam(i) { editParams.splice(i, 1); if (editOpen >= editParams.length) editOpen = -1; renderParams(); }
+    function moveParam(i, d) { const j = i + d; if (j < 0 || j >= editParams.length) return; [editParams[i], editParams[j]] = [editParams[j], editParams[i]]; if (editOpen === i) editOpen = j; else if (editOpen === j) editOpen = i; renderParams(); }
+    function toggleParamOpen(i) { editOpen = (editOpen === i) ? -1 : i; renderParams(); }
     function setParam(i, f, v, re) { editParams[i][f] = v; if (re) renderParams(); }
+    function _paramBody(p, i) {
+      const camposTipo =
+        p.tipo === "int"
+          ? `<label>Mínimo<input type="number" value="${p.minimo??''}" onchange="setParam(${i},'minimo',this.value===''?null:parseInt(this.value,10))"></label>
+             <label>Máximo<input type="number" value="${p.maximo??''}" onchange="setParam(${i},'maximo',this.value===''?null:parseInt(this.value,10))"></label>`
+          : p.tipo === "select"
+          ? `<label class="full">Opções (separadas por vírgula)<input value="${esc((p.choices||[]).join(', '))}" placeholder="status, restart, stop" onchange="setParam(${i},'choices',this.value.split(',').map(x=>x.trim()).filter(Boolean))"></label>`
+          : "";
+      const semValor = p.tipo === "bool"
+        ? `<label class="chk"><input type="checkbox" ${p.sem_valor?'checked':''} onchange="setParam(${i},'sem_valor',this.checked)"> Flag sem valor</label>`
+        : `<span></span>`;
+      return `
+        <div class="param-body">
+          <div class="pform">
+            <label>Nome<input value="${esc(p.nome||'')}" placeholder="ex.: linhas" onchange="setParam(${i},'nome',this.value)"></label>
+            <label class="chk"><input type="checkbox" ${p.obrigatorio?'checked':''} onchange="setParam(${i},'obrigatorio',this.checked)"> Obrigatório</label>
+            <label class="chk"><input type="checkbox" ${p.secret?'checked':''} onchange="setParam(${i},'secret',this.checked)"> Secret</label>
+
+            <label>Arg<input value="${esc(p.arg||'')}" placeholder="--flag (vazio = posicional)" onchange="setParam(${i},'arg',this.value)"></label>
+            ${semValor}
+            <label>Tipo<select onchange="setParam(${i},'tipo',this.value,true)">${PARAM_TIPOS.map(t=>`<option ${p.tipo===t?'selected':''}>${t}</option>`).join("")}</select></label>
+
+            <label>Variável de ambiente<input value="${esc(p.env||'')}" placeholder="ISY_X (injeta no env)" onchange="setParam(${i},'env',this.value)"></label>
+            <label>Valor padrão<input value="${esc(p.default||'')}" onchange="setParam(${i},'default',this.value)"></label>
+            <label>Constante (valor fixo)<input value="${esc(p.constante||'')}" placeholder="ignora input" onchange="setParam(${i},'constante',this.value)"></label>
+
+            <label class="full">Rótulo / descrição<input value="${esc(p.rotulo||'')}" placeholder="texto exibido na execução" onchange="setParam(${i},'rotulo',this.value)"></label>
+            ${camposTipo}
+          </div>
+        </div>`;
+    }
     function renderParams() {
       const box = $("param-list"); if (!box) return;
-      box.innerHTML = editParams.map((p, i) => `
-        <div class="param-card">
-          <div class="param-head">
-            <strong>${esc(p.nome || "(sem nome)")}</strong><span class="muted" style="font-size:11px">${esc(p.tipo)}</span>
-            <span style="margin-left:auto;display:flex;gap:4px">
-              <button class="btn ghost sm" type="button" onclick="moveParam(${i},-1)">↑</button>
-              <button class="btn ghost sm" type="button" onclick="moveParam(${i},1)">↓</button>
-              <button class="btn danger sm" type="button" onclick="removeParam(${i})">remover</button>
+      box.innerHTML = editParams.map((p, i) => {
+        const open = editOpen === i;
+        return `
+        <div class="param-card ${open?'open':''}">
+          <div class="param-head" onclick="toggleParamOpen(${i})">
+            <span class="drag">${_ICON_DRAG}</span>
+            <strong>${esc(p.nome || "novo parâmetro")}</strong>
+            ${p.obrigatorio ? '<span class="req-dot" title="obrigatório"></span>' : ''}
+            <span class="ptype">${esc(p.tipo)}</span>
+            <span class="param-actions" onclick="event.stopPropagation()">
+              <button type="button" class="del" onclick="removeParam(${i})" title="remover">${_ICON_TRASH}</button>
+              <button type="button" onclick="moveParam(${i},-1)" title="subir">${_ICON_UP}</button>
+              <button type="button" onclick="moveParam(${i},1)" title="descer">${_ICON_DOWN}</button>
             </span>
           </div>
-          <div class="param-grid">
-            <label>Nome<input value="${esc(p.nome||'')}" onchange="setParam(${i},'nome',this.value)"></label>
-            <label>Tipo<select onchange="setParam(${i},'tipo',this.value,true)">${PARAM_TIPOS.map(t=>`<option ${p.tipo===t?'selected':''}>${t}</option>`).join("")}</select></label>
-            <label>Arg<input value="${esc(p.arg||'')}" placeholder="--flag" onchange="setParam(${i},'arg',this.value)"></label>
-            <label>Default<input value="${esc(p.default||'')}" onchange="setParam(${i},'default',this.value)"></label>
-            ${p.tipo==='int' ? `<label>Min<input type="number" value="${p.minimo??''}" onchange="setParam(${i},'minimo',this.value===''?null:parseInt(this.value,10))"></label><label>Max<input type="number" value="${p.maximo??''}" onchange="setParam(${i},'maximo',this.value===''?null:parseInt(this.value,10))"></label>` : ""}
-            ${p.tipo==='select' ? `<label style="grid-column:1/-1">Opções (vírgula)<input value="${esc((p.choices||[]).join(','))}" onchange="setParam(${i},'choices',this.value.split(',').map(x=>x.trim()).filter(Boolean))"></label>` : ""}
-            <label>Env<input value="${esc(p.env||'')}" placeholder="ISY_X" onchange="setParam(${i},'env',this.value)"></label>
-            <label>Constante<input value="${esc(p.constante||'')}" onchange="setParam(${i},'constante',this.value)"></label>
-            <label class="chk"><input type="checkbox" ${p.obrigatorio?'checked':''} onchange="setParam(${i},'obrigatorio',this.checked)"> obrigatório</label>
-            <label class="chk"><input type="checkbox" ${p.secret?'checked':''} onchange="setParam(${i},'secret',this.checked)"> secret</label>
-            ${p.tipo==='bool' ? `<label class="chk"><input type="checkbox" ${p.sem_valor?'checked':''} onchange="setParam(${i},'sem_valor',this.checked)"> flag sem valor</label>` : ""}
-          </div>
-        </div>`).join("") || `<div class="muted" style="font-size:12px">Nenhum parâmetro. Use "+ parâmetro" para adicionar.</div>`;
+          ${open ? _paramBody(p, i) : ""}
+        </div>`;
+      }).join("") || `<div class="muted" style="font-size:12px">Nenhum parâmetro. Use "+ parâmetro" para adicionar.</div>`;
     }
 
     /* ---- editor de codigo inline (Modulo 2) ---- */
     async function openCodeEditor(id) {
       try {
         const { data } = await api(`/api/v1/admin/scripts/${id}/source`);
-        modal(`Código — ${esc(data.caminho)}`, `
-          <div class="field"><textarea id="code-src" class="mono" rows="18" spellcheck="false" style="font-size:12.5px;line-height:1.5">${esc(data.conteudo)}</textarea></div>
-          <div class="muted" style="font-size:11px">Grava em ${esc(data.caminho)} no servidor (precisa de ISY_SCRIPT_EDIT_ENABLED).</div>
+        const syntax = data.caminho.endsWith(".py") ? "python" : "bash";
+        modal(`Editar código — ${esc(data.caminho)}`, `
+          <div class="code-top">
+            <label class="radio"><input type="radio" name="src-mode" checked> Editar código</label>
+            <label class="radio"><input type="radio" name="src-mode" onclick="document.getElementById('src-upload').click(); return true" > Enviar arquivo</label>
+            <input id="src-upload" type="file" accept=".sh,.py,text/*" style="display:none" onchange="uploadCode(this)">
+            <div class="syntax">Syntax <select><option ${syntax==='bash'?'selected':''}>bash</option><option ${syntax==='python'?'selected':''}>python</option></select></div>
+          </div>
+          <div class="code-wrap"><div class="code-gutter" id="code-gutter">1</div><textarea id="code-src" spellcheck="false" oninput="syncGutter()" onscroll="document.getElementById('code-gutter').scrollTop=this.scrollTop">${esc(data.conteudo)}</textarea></div>
+          <div class="muted" style="font-size:11px;margin-top:8px">Grava em <span class="mono">${esc(data.caminho)}</span> no servidor (requer ISY_SCRIPT_EDIT_ENABLED).</div>
         `, [
-          { label: "Voltar", cls: "ghost", act: () => openScript(id) },
+          { label: "Cancelar", cls: "ghost", act: () => openScript(id) },
           { label: "Salvar código", cls: "", act: () => saveCode(id) },
         ]);
-        const m = document.querySelector(".modal"); if (m) m.style.maxWidth = "820px";
+        const m = document.querySelector(".modal"); if (m) m.style.maxWidth = "880px";
+        syncGutter();
       } catch (e) { toast(e.message, "err"); }
+    }
+    function syncGutter() {
+      const ta = $("code-src"); if (!ta) return;
+      const n = ta.value.split("\n").length;
+      $("code-gutter").textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
+    }
+    function uploadCode(input) {
+      const f = input.files && input.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { $("code-src").value = r.result; syncGutter(); };
+      r.readAsText(f);
     }
     async function saveCode(id) {
       try {
