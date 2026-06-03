@@ -65,10 +65,15 @@ def _sse(evento: str, data: dict) -> str:
     return f"event: {evento}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-@router.post("/api/v1/registro")
+@router.post("/api/v1/registro", summary="Cadastro self-service (SSE)")
 def registro(
     body: RegistroRequest, request: Request, db: Session = Depends(get_db)
 ) -> StreamingResponse:
+    """Cadastra um cliente self-service e transmite o provisionamento via SSE.
+
+    Cria o tenant (slug e token unicos), dispara o provisionar.sh e emite os
+    eventos tenant/log/done em text/event-stream ate devolver as credenciais.
+    """
     _rate_limit(request.client.host if request.client else "desconhecido")
 
     slug = _slug_unico(db, body.nome)

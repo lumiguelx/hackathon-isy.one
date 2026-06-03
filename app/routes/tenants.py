@@ -14,10 +14,11 @@ from app.services import execution_service, health_service, template_service
 router = APIRouter(prefix="/api/v1/tenants/{slug}", tags=["Cliente"])
 
 
-@router.get("/scripts")
+@router.get("/scripts", summary="Scripts disponiveis para o cliente")
 def list_scripts(
     tenant: Tenant = Depends(verify_tenant), db: Session = Depends(get_db)
 ) -> dict:
+    """Lista os scripts liberados para o cliente, com o schema de parametros de cada um."""
     disponiveis = tenant_scripts_repo.list_active_scripts(db, tenant.id)
     data = [
         {
@@ -38,13 +39,14 @@ def list_scripts(
     return ok(data)
 
 
-@router.post("/scripts/{script_id}/run")
+@router.post("/scripts/{script_id}/run", summary="Executar script")
 def run_script(
     script_id: int,
     body: RunRequest,
     tenant: Tenant = Depends(verify_tenant),
     db: Session = Depends(get_db),
 ) -> dict:
+    """Executa um script liberado para o cliente e devolve a saida auditada da execucao."""
     binding = tenant_scripts_repo.get(db, tenant.id, script_id)
     if binding is None or not binding.ativo:
         raise HTTPException(
@@ -75,10 +77,11 @@ def run_script(
     return ok({"id": event.id, **p, "executado_em": event.ocorrido_em.isoformat()}, msg)
 
 
-@router.get("/logs")
+@router.get("/logs", summary="Auditoria de execucoes do cliente")
 def list_logs(
     tenant: Tenant = Depends(verify_tenant), db: Session = Depends(get_db)
 ) -> dict:
+    """Retorna os ultimos 50 eventos de auditoria (execucoes) do cliente."""
     eventos = events_repo.list_by_tenant(db, tenant.id, limit=50)
     data = [
         {
@@ -92,8 +95,9 @@ def list_logs(
     return ok(data)
 
 
-@router.get("/health")
+@router.get("/health", summary="Saude do cliente")
 def health(
     tenant: Tenant = Depends(verify_tenant), db: Session = Depends(get_db)
 ) -> dict:
+    """Retorna as metricas de saude da frota daquele cliente."""
     return ok(health_service.calcular_saude(db, tenant))
