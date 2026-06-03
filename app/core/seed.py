@@ -35,6 +35,16 @@ CATALOGO = [
         caminho="cleanup_logs.sh",
         categoria="cleanup",
         descricao="Limpa/rotaciona logs antigos.",
+        param_schema=[
+            {
+                "nome": "dias",
+                "rotulo": "Dias de retenção",
+                "tipo": "int",
+                "default": "30",
+                "minimo": 1,
+                "maximo": 365,
+            },
+        ],
     ),
     ScriptCreate(
         nome="update_agent",
@@ -47,6 +57,14 @@ CATALOGO = [
         caminho="docker_status.sh",
         categoria="status",
         descricao="Status dos containers.",
+        param_schema=[
+            {
+                "nome": "filtro",
+                "rotulo": "Filtro de nome (opcional)",
+                "tipo": "text",
+                "default": "",
+            },
+        ],
     ),
     ScriptCreate(
         nome="docker_ctl",

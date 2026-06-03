@@ -279,6 +279,33 @@
       .topbar { padding: 0 16px; }
     }
     @media (min-width: 861px) { .scrim { display: none !important; } }
+    /* ---------- footer da equipe ---------- */
+    .team-footer { background: var(--navy-700); color: #c8cbe6; border-top: 2px solid var(--gold);
+      padding: 22px 28px; margin-top: auto; }
+    .team-footer .inner { max-width: 1240px; margin: 0 auto; width: 100%;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .team-footer .group { display: grid; gap: 3px; }
+    .team-footer .group .label { font-family: var(--font-display); font-weight: 800; font-size: 15px;
+      color: #fff; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+    .team-footer .group .label::before { content: ""; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--gold); flex: none; }
+    .team-footer .group .sub { font-size: 11.5px; color: #9a9fce; letter-spacing: .02em; }
+    .team-footer .members { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .team-footer .member { display: flex; align-items: center; gap: 10px; text-decoration: none;
+      color: #c8cbe6; transition: color .12s; }
+    .team-footer .member:hover { color: #fff; }
+    .team-footer .member img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+      border: 2px solid var(--navy-600); transition: border-color .12s; flex: none; background: var(--navy-800); }
+    .team-footer .member:hover img { border-color: var(--gold); }
+    .team-footer .member .who { display: grid; gap: 1px; }
+    .team-footer .member .who .nm { font-size: 13px; font-weight: 600; color: #eef0fb; line-height: 1.2; }
+    .team-footer .member .who .li { display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; color: #9a9fce; }
+    .team-footer .member:hover .who .li { color: var(--gold); }
+    @media (max-width: 720px) {
+      .team-footer .inner { flex-direction: column; align-items: flex-start; }
+      .team-footer .members { gap: 14px; }
+    }
   </style>
 </head>
 <body>
@@ -426,6 +453,47 @@
           <iframe id="grafana-frame" title="Grafana"></iframe>
         </section>
       </main>
+
+      <footer class="team-footer">
+        <div class="inner">
+          <div class="group">
+            <span class="label">Os Divos</span>
+            <span class="sub">Equipe ISYOPS · Hackathon</span>
+          </div>
+          <div class="members">
+            <a class="member" href="https://www.linkedin.com/in/ana-gabriella-souza-silva-20a5ab241/" target="_blank" rel="noopener">
+              <img src="/ui/brand/team/ana.png" alt="Ana Gabriella" />
+              <span class="who">
+                <span class="nm">Ana Gabriella</span>
+                <span class="li">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                  LinkedIn
+                </span>
+              </span>
+            </a>
+            <a class="member" href="https://www.linkedin.com/in/gabriel-reis-3202b823b/" target="_blank" rel="noopener">
+              <img src="/ui/brand/team/gabriel.png" alt="Gabriel Reis" />
+              <span class="who">
+                <span class="nm">Gabriel Reis</span>
+                <span class="li">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                  LinkedIn
+                </span>
+              </span>
+            </a>
+            <a class="member" href="https://www.linkedin.com/in/miguel-s-souza/" target="_blank" rel="noopener">
+              <img src="/ui/brand/team/miguel.png" alt="Luis Miguel" />
+              <span class="who">
+                <span class="nm">Luis Miguel</span>
+                <span class="li">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                  LinkedIn
+                </span>
+              </span>
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   </div>
 
@@ -591,17 +659,13 @@
         state.runScripts = data;
         $("dr-scripts").innerHTML = data.map(s => {
           const id = s.script_id || s.id;
-          const structured = (s.param_schema || []).filter(p => !p.env && !p.constante);
-          const legacy = s.parametros_schema || [];
-          let inputs;
-          if (structured.length) inputs = structured.map(p => paramInput(id, p)).join("");
-          else if (legacy.length) inputs = legacy.map(p => `<input id="p-${id}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" placeholder="${esc(p.nome)} (${esc(p.tipo)})" style="max-width:150px" />`).join("");
-          else inputs = `<input id="p-${id}" placeholder="${esc(s.parametros_default || 'sem parâmetros')}" />`;
+          const n = ((s.param_schema || []).filter(p => !p.env && !p.constante).length) || (s.parametros_schema || []).length;
+          const hint = n ? `${n} parâmetro${n > 1 ? "s" : ""}` : "sem parâmetros";
           return `
           <div class="exec-row">
             <span class="nm">${esc(s.nome)}</span>
-            ${inputs}
-            <button class="btn sm" onclick="runScript(${id})">executar</button>
+            <span class="muted" style="font-size:11px">${hint}</span>
+            <button class="btn sm" onclick="runDialog(${id})">executar</button>
           </div>`;
         }).join("") || `<div class="muted">Sem scripts vinculados.</div>`;
       } catch (e) { $("dr-scripts").innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
@@ -609,35 +673,54 @@
     }
     function closeDrawer() { $("drawer").classList.remove("show"); state.current = null; }
 
-    function paramInput(id, p) {
-      const key = `ps-${id}-${esc(p.nome)}`, ph = esc(p.rotulo || p.nome);
-      if (p.tipo === "select")
-        return `<select id="${key}" title="${ph}" style="max-width:150px">${(p.choices||[]).map(c=>`<option ${String(p.default)===c?'selected':''}>${esc(c)}</option>`).join("")}</select>`;
+    /* ---- dialogo de execucao (inputs tipados por parametro) ---- */
+    function paramField(sid, p) {
+      const key = `rp-${sid}-${esc(p.nome)}`, lbl = esc(p.rotulo || p.nome);
+      const req = p.obrigatorio ? ' <span style="color:var(--red)">*</span>' : "";
       if (p.tipo === "bool")
-        return `<label class="chk" title="${ph}"><input type="checkbox" id="${key}" ${p.default==='true'?'checked':''}> ${ph}</label>`;
-      if (p.tipo === "int")
-        return `<input id="${key}" type="number" ${p.minimo!=null?`min="${p.minimo}"`:''} ${p.maximo!=null?`max="${p.maximo}"`:''} value="${esc(p.default||'')}" placeholder="${ph}" style="max-width:120px" />`;
-      return `<input id="${key}" type="${p.secret?'password':'text'}" value="${esc(p.default||'')}" placeholder="${ph}" style="max-width:150px" />`;
+        return `<div class="field"><label class="chk" style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="${key}" ${p.default==='true'?'checked':''} style="width:auto"> ${lbl}</label></div>`;
+      let input, hint = "";
+      if (p.tipo === "select")
+        input = `<select id="${key}">${(p.choices||[]).map(c=>`<option ${String(p.default)===c?'selected':''}>${esc(c)}</option>`).join("")}</select>`;
+      else if (p.tipo === "int") {
+        input = `<input id="${key}" type="number" ${p.minimo!=null?`min="${p.minimo}"`:''} ${p.maximo!=null?`max="${p.maximo}"`:''} value="${esc(p.default||'')}" />`;
+        if (p.minimo != null || p.maximo != null) hint = `<div class="hint">faixa ${p.minimo??'−∞'} a ${p.maximo??'∞'}</div>`;
+      } else input = `<input id="${key}" type="${p.secret?'password':'text'}" value="${esc(p.default||'')}" />`;
+      return `<div class="field"><label>${lbl}${req}</label>${input}${hint}</div>`;
     }
-
-    async function runScript(sid) {
+    function runDialog(sid) {
       const s = (state.runScripts || []).find(x => (x.script_id || x.id) === sid) || {};
       const structured = (s.param_schema || []).filter(p => !p.env && !p.constante);
+      const legacy = s.parametros_schema || [];
+      if (!structured.length && !legacy.length) {
+        doRun(sid, { parametros: (s.parametros_default || "").split(/\s+/).filter(Boolean) });
+        return;
+      }
+      const fields = structured.length
+        ? structured.map(p => paramField(sid, p)).join("")
+        : legacy.map(p => `<div class="field"><label>${esc(p.nome)} <span class="muted">(${esc(p.tipo)})</span></label><input id="rl-${sid}-${esc(p.nome)}" type="${p.tipo==='int'?'number':'text'}" /></div>`).join("");
+      modal(`Executar — ${esc(s.nome)}`, `${s.descricao ? `<div class="muted" style="margin-bottom:14px;font-size:12.5px">${esc(s.descricao)}</div>` : ""}${fields}`, [
+        { label: "Cancelar", cls: "ghost", act: closeModal },
+        { label: "Executar", cls: "accent", act: () => collectAndRun(sid, structured.length > 0) },
+      ]);
+    }
+    function collectAndRun(sid, structured) {
+      const s = (state.runScripts || []).find(x => (x.script_id || x.id) === sid) || {};
       let body;
-      if (structured.length) {
+      if (structured) {
         const valores = {};
-        structured.forEach(p => {
-          const el = $(`ps-${sid}-${p.nome}`);
-          if (!el) return;
+        (s.param_schema || []).filter(p => !p.env && !p.constante).forEach(p => {
+          const el = $(`rp-${sid}-${p.nome}`); if (!el) return;
           valores[p.nome] = p.tipo === "bool" ? (el.checked ? "true" : "false") : el.value.trim();
         });
         body = { valores };
-      } else if ((s.parametros_schema || []).length) {
-        body = { parametros: Array.from(document.querySelectorAll(`[id^="p-${sid}-"]`)).map(c => c.value.trim()) };
       } else {
-        const raw = ($(`p-${sid}`)?.value || "").trim();
-        body = { parametros: raw ? raw.split(/\s+/) : [] };
+        body = { parametros: Array.from(document.querySelectorAll(`[id^="rl-${sid}-"]`)).map(c => c.value.trim()) };
       }
+      closeModal();
+      doRun(sid, body);
+    }
+    async function doRun(sid, body) {
       $("dr-out").textContent = "Executando...";
       try {
         const { data } = await api(`/api/v1/tenants/${state.current}/scripts/${sid}/run`, { method: "POST", body: JSON.stringify(body) });
