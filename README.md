@@ -7,7 +7,7 @@
 Executa, de forma controlada, isolada e auditada, os shell scripts de manutenção
 dos servidores dos restaurantes parceiros — eliminando o acesso manual via SSH.
 
-[**Demo ao vivo**](https://hackathon-api-production-5f01.up.railway.app/ui) · [**API (Swagger)**](https://hackathon-api-production-5f01.up.railway.app/docs)
+[**Site do projeto**](https://lumiguelx.github.io/hackathon-isy.one/) · [**API (Swagger)**](https://lumiguelx.github.io/hackathon-isy.one/swagger/) · [**Demo ao vivo**](https://hackathon-api-production-5f01.up.railway.app/ui)
 
 `Python 3.11` · `FastAPI` · `SQLAlchemy 2.0` · `PostgreSQL` · `Docker` · `Grafana`
 
@@ -31,6 +31,18 @@ um **tenant** com credencial própria; cada execução vira **auditoria permanen
 **saúde** de cada cliente (verde / amarelo / vermelho) é calculada a partir do histórico
 de execuções, sem tabela de status. Tudo dentro de um container Docker, sem ninguém abrir
 um terminal SSH.
+
+## Telas
+
+<img src="docs/img/01-clientes.png" alt="Console: clientes e saúde da frota" />
+
+| Detalhe do cliente | Auditoria |
+|---|---|
+| <img src="docs/img/02-cliente-detalhe.png" alt="Detalhe do cliente" /> | <img src="docs/img/05-auditoria.png" alt="Auditoria de execuções" /> |
+| **Agendamentos** | **Tokens e notificações** |
+| <img src="docs/img/04-agendamentos.png" alt="Agendamentos" /> | <img src="docs/img/06-token.png" alt="Tokens" /> |
+
+Mais telas no [site do projeto](https://lumiguelx.github.io/hackathon-isy.one/#telas).
 
 ## Funcionalidades
 
@@ -97,6 +109,14 @@ deploy, SQLite na demo local), empacotada numa imagem Docker enxuta sobre
 - **Docs de API** — Scalar (`/docs`) e Swagger (`/swagger`), a partir do OpenAPI
 - **Infra** — Docker, deploy na Railway
 - **Qualidade** — pytest e validador próprio de contrato OpenAPI
+
+## Site e Swagger (GitHub Pages)
+
+A pasta `docs/` é publicada no GitHub Pages: landing do projeto em `docs/index.html` e
+Swagger UI com a identidade ISYOPS em `docs/swagger/`. O Swagger lê `docs/openapi.json`;
+depois de mudar rotas, regenere com `make pages`. Para o "Try it out", escolha o servidor
+(local em `localhost:8000` ou Railway). A API libera CORS para as origens de
+`ISY_CORS_ORIGINS` (padrão: `https://lumiguelx.github.io`).
 
 ## Time
 

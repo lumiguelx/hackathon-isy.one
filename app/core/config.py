@@ -58,5 +58,13 @@ class Settings(BaseSettings):
     # Habilita gravar o codigo do .sh pela UI (sensivel: codigo executavel em disco).
     script_edit_enabled: bool = False
 
+    # Origens liberadas no CORS (separadas por virgula). O default libera o Swagger
+    # publicado no GitHub Pages a chamar a API pelo navegador ("Try it out").
+    cors_origins: str = "https://lumiguelx.github.io"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
 
 settings = Settings()
