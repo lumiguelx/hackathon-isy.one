@@ -1,0 +1,1981 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Isy.One Shell Automation API",
+    "summary": "API de automacao de shell multi-tenant com execucao auditada.",
+    "description": "\nExecucao controlada e auditada de shell scripts de manutencao em servidores de\nclientes (multi-tenant), sem SSH manual.\n\n## Autenticacao\n\nTodas as rotas protegidas usam o header **`X-Isy-Token`**. Clique em **Authorize**\ne informe o token:\n\n- **Admin** (gestao de tenants, catalogo e bindings): abre todas as rotas.\n- **Cliente** (token do proprio tenant): acessa apenas os recursos daquele cliente.\n\n## Envelope de resposta\n\nToda resposta segue o formato `{ \"status\": \"success\" | \"error\", \"data\": ..., \"message\": \"...\" }`.\n",
+    "contact": {
+      "name": "Isy.One",
+      "url": "https://isy.one/hackaton/"
+    },
+    "license": {
+      "name": "Proprietario"
+    },
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness do servico",
+        "description": "Liveness do servico: responde 200 com {alive: true} sem tocar no banco.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Config publica do painel",
+        "description": "Config nao-sensivel consumida pelo painel /ui (ex.: link do Grafana).",
+        "operationId": "ui_config_api_v1_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Ui Config Api V1 Config Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registro": {
+      "post": {
+        "tags": [
+          "Self-service"
+        ],
+        "summary": "Cadastro self-service (SSE)",
+        "description": "Cadastra um cliente self-service e transmite o provisionamento via SSE.\n\nCria o tenant (slug e token unicos), dispara o provisionar.sh e emite os\neventos tenant/log/done em text/event-stream ate devolver as credenciais.",
+        "operationId": "registro_api_v1_registro_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tenants": {
+      "get": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Listar clientes",
+        "description": "Lista todos os clientes (tenants) cadastrados na plataforma.",
+        "operationId": "list_tenants_api_v1_admin_tenants_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response List Tenants Api V1 Admin Tenants Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Cadastrar cliente",
+        "description": "Cadastra um novo cliente; falha com 409 se o slug ja existir.",
+        "operationId": "create_tenant_api_v1_admin_tenants_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Create Tenant Api V1 Admin Tenants Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/tenants/{slug}": {
+      "put": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Atualizar cliente",
+        "description": "Atualiza os dados de um cliente existente, identificado pelo slug.",
+        "operationId": "update_tenant_api_v1_admin_tenants__slug__put",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Update Tenant Api V1 Admin Tenants  Slug  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Desprovisionar e remover cliente",
+        "description": "Desprovisiona o servidor do cliente (se houver) e remove o cadastro.",
+        "operationId": "delete_tenant_api_v1_admin_tenants__slug__delete",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Delete Tenant Api V1 Admin Tenants  Slug  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/scripts": {
+      "get": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Listar catalogo de scripts",
+        "description": "Lista o catalogo completo de scripts, com o schema de parametros de cada um.",
+        "operationId": "list_scripts_api_v1_admin_scripts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response List Scripts Api V1 Admin Scripts Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Cadastrar script",
+        "description": "Cadastra um script no catalogo (tipo arquivo ou template).",
+        "operationId": "create_script_api_v1_admin_scripts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Create Script Api V1 Admin Scripts Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/scripts/{script_id}": {
+      "put": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Atualizar script",
+        "description": "Atualiza um script do catalogo (patch parcial), validando a coerencia tipo/conteudo.",
+        "operationId": "update_script_api_v1_admin_scripts__script_id__put",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "script_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Script Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Update Script Api V1 Admin Scripts  Script Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/scripts/{script_id}/source": {
+      "get": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Ler codigo do script",
+        "description": "Le o codigo do .sh/.py do script para o editor inline.",
+        "operationId": "get_script_source_api_v1_admin_scripts__script_id__source_get",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "script_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Script Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Script Source Api V1 Admin Scripts  Script Id  Source Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Gravar codigo do script",
+        "description": "Grava o codigo do script no diretorio de scripts (atras de flag, path-guarded).",
+        "operationId": "put_script_source_api_v1_admin_scripts__script_id__source_put",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "script_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Script Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptSource"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Put Script Source Api V1 Admin Scripts  Script Id  Source Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tenants/{slug}/scripts": {
+      "put": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Vincular script a um cliente",
+        "description": "Vincula um script a um cliente; bloqueia scripts exclusivos de outro tenant.",
+        "operationId": "bind_script_api_v1_admin_tenants__slug__scripts_put",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantScriptBinding"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Bind Script Api V1 Admin Tenants  Slug  Scripts Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/token": {
+      "put": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Rotacionar token admin",
+        "description": "Substitui o token de admin por um novo valor.",
+        "operationId": "rotate_admin_token_api_v1_admin_token_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Rotate Admin Token Api V1 Admin Token Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/tenants/{slug}/token": {
+      "put": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Rotacionar token do cliente",
+        "description": "Rotaciona o token de acesso de um cliente especifico e audita a troca.",
+        "operationId": "rotate_tenant_token_api_v1_admin_tenants__slug__token_put",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Rotate Tenant Token Api V1 Admin Tenants  Slug  Token Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tenants/{slug}/test-alert": {
+      "post": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Enviar notificacao de teste",
+        "description": "Dispara uma notificacao de teste para o webhook do cliente (ou o global).",
+        "operationId": "test_alert_api_v1_admin_tenants__slug__test_alert_post",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Test Alert Api V1 Admin Tenants  Slug  Test Alert Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tenants/health": {
+      "get": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Dashboard de saude da frota",
+        "description": "Calcula e retorna a saude de toda a frota de clientes para o dashboard.",
+        "operationId": "dashboard_api_v1_admin_tenants_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Dashboard Api V1 Admin Tenants Health Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/schedules": {
+      "get": {
+        "tags": [
+          "Administracao"
+        ],
+        "summary": "Listar agendamentos de todos os clientes",
+        "description": "Lista os agendamentos de toda a frota, com nome do cliente e do script.",
+        "operationId": "list_schedules_api_v1_admin_schedules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response List Schedules Api V1 Admin Schedules Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tenants/{slug}/scripts": {
+      "get": {
+        "tags": [
+          "Cliente"
+        ],
+        "summary": "Scripts disponiveis para o cliente",
+        "description": "Lista os scripts liberados para o cliente, com o schema de parametros de cada um.",
+        "operationId": "list_scripts_api_v1_tenants__slug__scripts_get",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response List Scripts Api V1 Tenants  Slug  Scripts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{slug}/scripts/{script_id}/run": {
+      "post": {
+        "tags": [
+          "Cliente"
+        ],
+        "summary": "Executar script",
+        "description": "Executa um script liberado para o cliente e devolve a saida auditada da execucao.",
+        "operationId": "run_script_api_v1_tenants__slug__scripts__script_id__run_post",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "script_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Script Id"
+            }
+          },
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Run Script Api V1 Tenants  Slug  Scripts  Script Id  Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{slug}/logs": {
+      "get": {
+        "tags": [
+          "Cliente"
+        ],
+        "summary": "Auditoria de execucoes do cliente",
+        "description": "Retorna os ultimos 50 eventos de auditoria (execucoes) do cliente.",
+        "operationId": "list_logs_api_v1_tenants__slug__logs_get",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response List Logs Api V1 Tenants  Slug  Logs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{slug}/health": {
+      "get": {
+        "tags": [
+          "Cliente"
+        ],
+        "summary": "Saude do cliente",
+        "description": "Retorna as metricas de saude da frota daquele cliente.",
+        "operationId": "health_api_v1_tenants__slug__health_get",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Health Api V1 Tenants  Slug  Health Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{slug}/schedules": {
+      "get": {
+        "tags": [
+          "Cliente"
+        ],
+        "summary": "Agendamentos do cliente",
+        "description": "Lista os agendamentos (cron) configurados para o cliente, com a proxima execucao.",
+        "operationId": "list_schedules_api_v1_tenants__slug__schedules_get",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response List Schedules Api V1 Tenants  Slug  Schedules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Cliente"
+        ],
+        "summary": "Criar agendamento",
+        "description": "Agenda a execucao automatica de um script liberado para o cliente.",
+        "operationId": "create_schedule_api_v1_tenants__slug__schedules_post",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Create Schedule Api V1 Tenants  Slug  Schedules Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{slug}/schedules/{schedule_id}": {
+      "put": {
+        "tags": [
+          "Cliente"
+        ],
+        "summary": "Atualizar agendamento",
+        "description": "Atualiza um agendamento do cliente (horario, parametros ou ativo).",
+        "operationId": "update_schedule_api_v1_tenants__slug__schedules__schedule_id__put",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Schedule Id"
+            }
+          },
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Update Schedule Api V1 Tenants  Slug  Schedules  Schedule Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cliente"
+        ],
+        "summary": "Remover agendamento",
+        "description": "Remove um agendamento do cliente.",
+        "operationId": "delete_schedule_api_v1_tenants__slug__schedules__schedule_id__delete",
+        "security": [
+          {
+            "X-Isy-Token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Schedule Id"
+            }
+          },
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Delete Schedule Api V1 Tenants  Slug  Schedules  Schedule Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ParamSpec": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 40,
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Nome"
+          },
+          "rotulo": {
+            "type": "string",
+            "maxLength": 80,
+            "title": "Rotulo",
+            "default": ""
+          },
+          "tipo": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Tipo",
+            "default": "text"
+          },
+          "arg": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Arg",
+            "default": ""
+          },
+          "obrigatorio": {
+            "type": "boolean",
+            "title": "Obrigatorio",
+            "default": false
+          },
+          "default": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Default",
+            "default": ""
+          },
+          "minimo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimo"
+          },
+          "maximo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximo"
+          },
+          "choices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Choices"
+          },
+          "secret": {
+            "type": "boolean",
+            "title": "Secret",
+            "default": false
+          },
+          "env": {
+            "type": "string",
+            "maxLength": 60,
+            "title": "Env",
+            "default": ""
+          },
+          "constante": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Constante",
+            "default": ""
+          },
+          "sem_valor": {
+            "type": "boolean",
+            "title": "Sem Valor",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome"
+        ],
+        "title": "ParamSpec",
+        "description": "Definicao estruturada de um parametro de script (estilo script-server)."
+      },
+      "RegistroRequest": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 180,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email"
+          },
+          "plano": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Plano",
+            "default": "free"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "email"
+        ],
+        "title": "RegistroRequest",
+        "description": "Cadastro self-service publico (plano free)."
+      },
+      "RunRequest": {
+        "properties": {
+          "parametros": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parametros"
+          },
+          "valores": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Valores"
+          }
+        },
+        "type": "object",
+        "title": "RunRequest"
+      },
+      "ScheduleCreate": {
+        "properties": {
+          "script_id": {
+            "type": "integer",
+            "title": "Script Id"
+          },
+          "cron_expr": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Cron Expr"
+          },
+          "parametros": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Parametros",
+            "default": ""
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "script_id",
+          "cron_expr"
+        ],
+        "title": "ScheduleCreate"
+      },
+      "ScheduleUpdate": {
+        "properties": {
+          "cron_expr": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cron Expr"
+          },
+          "parametros": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parametros"
+          },
+          "ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "title": "ScheduleUpdate"
+      },
+      "ScriptCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Nome"
+          },
+          "caminho": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Caminho",
+            "default": ""
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          },
+          "tipo": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Tipo",
+            "default": "arquivo"
+          },
+          "parametros": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Parametros",
+            "default": ""
+          },
+          "param_schema": {
+            "items": {
+              "$ref": "#/components/schemas/ParamSpec"
+            },
+            "type": "array",
+            "title": "Param Schema"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Descricao",
+            "default": ""
+          },
+          "categoria": {
+            "type": "string",
+            "title": "Categoria",
+            "default": "other"
+          },
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome"
+        ],
+        "title": "ScriptCreate"
+      },
+      "ScriptSource": {
+        "properties": {
+          "conteudo": {
+            "type": "string",
+            "maxLength": 100000,
+            "title": "Conteudo",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "ScriptSource"
+      },
+      "ScriptUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "caminho": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caminho"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          },
+          "tipo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipo"
+          },
+          "parametros": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parametros"
+          },
+          "param_schema": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ParamSpec"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Param Schema"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "categoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoria"
+          },
+          "ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "title": "ScriptUpdate"
+      },
+      "TenantCreate": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Slug"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Nome"
+          },
+          "dominio": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Dominio"
+          },
+          "porta": {
+            "type": "integer",
+            "maximum": 65535.0,
+            "minimum": 1.0,
+            "title": "Porta"
+          },
+          "db_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Db Name"
+          },
+          "ssh_host": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssh Host"
+          },
+          "ssh_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssh Port"
+          },
+          "alert_webhook_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Webhook Url"
+          },
+          "token": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 8,
+            "title": "Token"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "nome",
+          "dominio",
+          "porta",
+          "db_name",
+          "token"
+        ],
+        "title": "TenantCreate"
+      },
+      "TenantScriptBinding": {
+        "properties": {
+          "script_id": {
+            "type": "integer",
+            "title": "Script Id"
+          },
+          "parametros_default": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Parametros Default",
+            "default": ""
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "script_id"
+        ],
+        "title": "TenantScriptBinding"
+      },
+      "TenantUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "dominio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dominio"
+          },
+          "porta": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Porta"
+          },
+          "db_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Db Name"
+          },
+          "ssh_host": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssh Host"
+          },
+          "ssh_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssh Port"
+          },
+          "alert_webhook_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Webhook Url"
+          },
+          "ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "title": "TenantUpdate"
+      },
+      "TokenUpdate": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 8,
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "TokenUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "X-Isy-Token": {
+        "type": "apiKey",
+        "description": "Token de autenticacao (admin ou do proprio cliente).",
+        "in": "header",
+        "name": "X-Isy-Token"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Liveness e config publica do painel (sem token)."
+    },
+    {
+      "name": "Self-service",
+      "description": "Cadastro publico que provisiona o cliente sozinho (SSE)."
+    },
+    {
+      "name": "Administracao",
+      "description": "Gestao de tenants, catalogo de scripts, bindings e tokens. Exige token admin."
+    },
+    {
+      "name": "Cliente",
+      "description": "Operacao por cliente: scripts disponiveis, execucao, logs e saude."
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local (docker compose up / uvicorn)"
+    },
+    {
+      "url": "https://hackathon-api-production-5f01.up.railway.app",
+      "description": "Railway (demo)"
+    }
+  ]
+}

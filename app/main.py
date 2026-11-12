@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -79,6 +80,15 @@ app = FastAPI(
     # disponivel em /swagger para debug e o ReDoc padrao e desligado.
     docs_url="/swagger",
     redoc_url=None,
+)
+
+# CORS restrito a origens conhecidas (ex.: Swagger no GitHub Pages). Sem cookies:
+# a autenticacao e so pelo header X-Isy-Token.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["X-Isy-Token", "Content-Type"],
 )
 
 app.include_router(health.router)

@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISYOPS · Automação de Frota</title>
+  <meta name="description" content="Painel multi-cliente que executa shell scripts e gerencia containers Docker de forma isolada e auditada, com observabilidade em Prometheus e Grafana." />
+  <meta name="theme-color" content="#0e113a" />
+  <link rel="icon" type="image/png" href="brand/favicon-32.png" />
+  <link rel="apple-touch-icon" href="brand/apple-touch-icon.png" />
+  <meta property="og:title" content="ISYOPS · Automação de Frota" />
+  <meta property="og:description" content="Shell scripts e Docker executados pela web, isolados por cliente e auditados." />
+  <meta property="og:image" content="img/01-clientes.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy-900:#010128; --navy-800:#0a0d2e; --navy-700:#0e113a; --navy-600:#161a52;
+      --gold:#fcb400; --gold-soft:#fff6df;
+      --bg:#f6f5f1; --surface:#fff; --border:#e8e6df;
+      --text:#15161c; --text-2:#3a3b44; --muted:#6a6c76;
+      --green:#1f9d57; --amber:#e8920c; --red:#dc2626;
+      --font:"Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+      --shadow:0 1px 2px rgba(10,12,40,.04), 0 10px 26px rgba(10,12,40,.06);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; }
+    a { color: inherit; }
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    code { font-family: var(--mono); font-size: .88em; background: #eceae3; padding: 1px 6px; border-radius: 5px; }
+
+    /* Topbar */
+    .top { position: sticky; top: 0; z-index: 10; background: var(--navy-700); border-bottom: 2px solid var(--gold); }
+    .top .wrap { display: flex; align-items: center; gap: 20px; height: 60px; }
+    .top img { height: 28px; display: block; }
+    .top nav { margin-left: auto; display: flex; gap: 22px; }
+    .top nav a { color: #c9cbe0; text-decoration: none; font-size: 14px; font-weight: 500; }
+    .top nav a:hover { color: #fff; }
+
+    /* Hero */
+    .hero { background: linear-gradient(180deg, var(--navy-700) 0%, var(--navy-800) 100%); color: #fff; padding: 72px 0 0; overflow: hidden; }
+    .eyebrow { color: var(--gold); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; }
+    .hero h1 { font-size: clamp(32px, 5.4vw, 56px); line-height: 1.06; letter-spacing: -.03em; font-weight: 800; margin: 14px 0 18px; max-width: 880px; }
+    .hero h1 em { font-style: normal; color: var(--gold); }
+    .hero p.lead { color: #c9cbe0; font-size: clamp(16px, 2vw, 19px); max-width: 720px; margin: 0 0 30px; }
+    .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 52px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; }
+    .btn.gold { background: var(--gold); color: var(--navy-900); }
+    .btn.gold:hover { background: #ffc52e; }
+    .btn.ghost { border: 1px solid rgba(255,255,255,.25); color: #fff; }
+    .btn.ghost:hover { background: rgba(255,255,255,.06); }
+    .shot-hero { display: block; width: 100%; border-radius: 14px 14px 0 0; box-shadow: 0 -10px 60px rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.12); border-bottom: 0; }
+
+    section { padding: 80px 0; }
+    h2 { font-size: clamp(26px, 3.4vw, 36px); letter-spacing: -.02em; line-height: 1.15; margin: 10px 0 14px; font-weight: 800; }
+    .sec-lead { color: var(--text-2); max-width: 760px; font-size: 17px; margin: 0 0 40px; }
+    .eyebrow.dark { color: #a87800; }
+
+    /* Problema / solucao */
+    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; box-shadow: var(--shadow); }
+    .panel h3 { margin: 0 0 10px; font-size: 19px; }
+    .panel p { margin: 0; color: var(--text-2); }
+    .panel.pain { border-top: 3px solid var(--red); }
+    .panel.fix { border-top: 3px solid var(--green); }
+
+    /* Features */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .feat { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+    .feat .ic { width: 38px; height: 38px; border-radius: 10px; background: var(--navy-700); color: var(--gold); display: grid; place-items: center; margin-bottom: 14px; }
+    .feat .ic svg { width: 20px; height: 20px; }
+    .feat h3 { margin: 0 0 6px; font-size: 17px; }
+    .feat p { margin: 0; color: var(--text-2); font-size: 15px; }
+
+    /* Galeria */
+    .gallery { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .tab { font: 600 14px var(--font); padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--text-2); cursor: pointer; }
+    .tab[aria-selected="true"] { background: var(--navy-700); border-color: var(--navy-700); color: #fff; }
+    .frame { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--navy-700); }
+    .frame img { display: block; width: 100%; height: auto; }
+    .caption { color: var(--muted); font-size: 15px; margin-top: 14px; min-height: 1.6em; }
+
+    /* Arquitetura */
+    .arch { background: var(--navy-800); color: #e6e7f2; }
+    .arch h2 { color: #fff; }
+    .arch .sec-lead { color: #b3b6cf; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: stretch; }
+    .node { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 20px; position: relative; }
+    .node .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+    .node h4 { margin: 6px 0 8px; font-size: 17px; color: #fff; }
+    .node p { margin: 0; font-size: 14px; color: #b3b6cf; }
+    .node:not(:last-child)::after { content: "→"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); color: var(--gold); font-weight: 700; }
+    .obs { margin-top: 18px; border: 1px dashed rgba(252,180,0,.45); border-radius: 14px; padding: 18px 20px; font-size: 14.5px; color: #c9cbe0; }
+    .obs b { color: #fff; }
+    .arch code { background: rgba(255,255,255,.08); color: var(--gold); }
+
+    /* Seguranca */
+    .sec-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .chk { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+    .chk svg { flex: 0 0 20px; color: var(--green); margin-top: 3px; }
+    .chk b { display: block; font-size: 15px; }
+    .chk span { color: var(--text-2); font-size: 14.5px; }
+
+    /* Stack */
+    .pills { display: flex; flex-wrap: wrap; gap: 10px; }
+    .pill { font-family: var(--mono); font-size: 13.5px; padding: 8px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); }
+
+    /* Run */
+    pre { background: var(--navy-800); color: #e6e7f2; padding: 22px 24px; border-radius: 14px; overflow-x: auto; font: 14px/1.7 var(--mono); margin: 0; }
+    pre .c { color: #7d81a8; }
+    pre .g { color: var(--gold); }
+
+    /* Time */
+    .team { display: flex; flex-wrap: wrap; gap: 18px; }
+    .member { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 20px 14px 14px; text-decoration: none; min-width: 240px; }
+    .member img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+    .member b { display: block; }
+    .member span { color: var(--muted); font-size: 14px; font-family: var(--mono); }
+    .member:hover { border-color: var(--navy-600); }
+
+    footer { background: var(--navy-900); color: #8b8fb3; padding: 36px 0; font-size: 14px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
+    footer img { height: 22px; }
+    footer a { color: #c9cbe0; }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+      .flow { grid-template-columns: 1fr 1fr; }
+      .node:not(:last-child)::after { display: none; }
+    }
+    @media (max-width: 640px) {
+      .wrap { padding: 0 16px; }
+      .top nav a.opt { display: none; }
+      .hero { padding-top: 48px; }
+      section { padding: 56px 0; }
+      .duo, .grid, .flow { grid-template-columns: 1fr; }
+      .member { min-width: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a href="./"><img src="brand/c_wordmark.svg" alt="ISYOPS" /></a>
+      <nav>
+        <a class="opt" href="#funcionalidades">Funcionalidades</a>
+        <a class="opt" href="#telas">Telas</a>
+        <a class="opt" href="#arquitetura">Arquitetura</a>
+        <a href="swagger/">API</a>
+        <a href="https://github.com/lumiguelx/hackathon-isy.one">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Hackathon Isy.One</div>
+      <h1>Shell scripts e Docker pela web, <em>isolados por cliente</em> e auditados.</h1>
+      <p class="lead">O ISYOPS é um painel central multi-cliente que executa a manutenção dos servidores dos
+        restaurantes parceiros da Isy.One: roda scripts, gerencia e faz deploy de containers e
+        monitora a saúde da frota com Prometheus e Grafana. Ninguém precisa abrir SSH.</p>
+      <div class="ctas">
+        <a class="btn gold" href="swagger/">Explorar a API →</a>
+        <a class="btn ghost" href="https://github.com/lumiguelx/hackathon-isy.one">Ver código no GitHub</a>
+      </div>
+      <img class="shot-hero" src="img/01-clientes.png" alt="Console ISYOPS: lista de clientes com saúde verde, amarela e vermelha" width="2160" height="1350" />
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <div class="eyebrow dark">O desafio</div>
+      <h2>Manutenção da frota sem acesso manual por SSH</h2>
+      <div class="duo">
+        <div class="panel pain">
+          <h3>Antes</h3>
+          <p>O suporte mantém centenas de servidores Linux de restaurantes (Agente de Impressão do iFood).
+            Atualizar o agente, limpar logs de cupons ou checar os containers do banco exigia entrar
+            por SSH e rodar scripts na mão. Era lento e não deixava registro de quem rodou o quê,
+            quando, com quais parâmetros e com qual resultado.</p>
+        </div>
+        <div class="panel fix">
+          <h3>Com o ISYOPS</h3>
+          <p>Cada restaurante é um <b>tenant</b> com token próprio. Os scripts rodam por requisição
+            autenticada, só dentro do ambiente daquele cliente. Cada execução vira um evento de
+            auditoria imutável, e a saúde do cliente (verde, amarelo ou vermelho) é calculada a partir
+            desse histórico.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="funcionalidades" style="padding-top:0">
+    <div class="wrap">
+      <div class="eyebrow dark">Funcionalidades</div>
+      <h2>O que o painel faz</h2>
+      <p class="sec-lead">Tudo o que o desafio pedia, mais agendamento, alertas e cadastro self-service.</p>
+      <div class="grid">
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+          <h3>Scripts .sh pela web</h3>
+          <p>Execução por requisição autenticada, local ou no servidor do cliente via SSH, com parâmetros tipados e timeout.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h3>Isolamento por cliente</h3>
+          <p>Token próprio e lista de scripts permitidos por tenant. O token de um cliente nunca alcança outro.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+          <h3>Containers Docker</h3>
+          <p>Status, restart, stop e logs (<code>docker_ctl</code>), além de criar e fazer o deploy da stack de um cliente novo (<code>provisionar</code>).</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <h3>Prometheus + Grafana</h3>
+          <p>cAdvisor e node-exporter coletam métricas dos containers e do host, e o Grafana mostra a saúde da frota Docker.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <h3>Auditoria imutável</h3>
+          <p>Event sourcing: horário, script, parâmetros, status, exit code e duração de cada execução.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <h3>Cron e alertas</h3>
+          <p>Agendamento recorrente por cliente e notificações no Slack para falhas, sucessos e frota crítica.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="telas" class="gallery">
+    <div class="wrap">
+      <div class="eyebrow dark">Telas</div>
+      <h2>O console de automação</h2>
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div class="frame"><img id="shot" src="img/01-clientes.png" alt="" width="2160" height="1350" /></div>
+      <p class="caption" id="cap"></p>
+    </div>
+  </section>
+
+  <section id="arquitetura" class="arch">
+    <div class="wrap">
+      <div class="eyebrow">Arquitetura</div>
+      <h2>Do clique ao container do cliente</h2>
+      <p class="sec-lead">Backend em camadas (rota → service → repository → core), empacotado numa imagem
+        Docker enxuta e publicado na Railway.</p>
+      <div class="flow">
+        <div class="node"><div class="k">Entrada</div><h4>Console, curl ou Swagger</h4><p>HTTP com o header <code>X-Isy-Token</code>, de admin ou de cliente.</p></div>
+        <div class="node"><div class="k">API</div><h4>FastAPI</h4><p>Valida o token, a lista de scripts do tenant, os parâmetros e o caminho do script.</p></div>
+        <div class="node"><div class="k">Execução</div><h4>subprocess / SSH</h4><p><code>shell=False</code> e timeout. Com <code>ssh_host</code>, roda no servidor real do cliente.</p></div>
+        <div class="node"><div class="k">Persistência</div><h4>PostgreSQL</h4><p>tenants, scripts, bindings e <b>events</b> (auditoria append-only).</p></div>
+      </div>
+      <div class="obs"><b>Observabilidade na borda:</b> em cada servidor de cliente, <code>cAdvisor</code> e
+        <code>node-exporter</code> são raspados por um <code>OTel Collector</code>, que envia (remote-write) as
+        métricas para o <code>Prometheus</code> central. O <code>Grafana</code> já sobe com o dashboard
+        “Saúde da Frota Docker” provisionado.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="eyebrow dark">Segurança</div>
+      <h2>Execução controlada por padrão</h2>
+      <p class="sec-lead">Nenhuma string do request vira comando. Só rodam scripts cadastrados, ativos e vinculados ao cliente.</p>
+      <div class="sec-list">
+        <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg><div><b>Auth em dois níveis</b><span>Token admin e token por tenant, comparados com <code>compare_digest</code>.</span></div></div>
+        <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg><div><b>Anti command injection</b><span>Lista de argumentos com <code>shell=False</code>. No SSH, o charset dos parâmetros é validado.</span></div></div>
+        <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg><div><b>Anti path traversal</b><span>Caminho normalizado e preso ao diretório de scripts.</span></div></div>
+        <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg><div><b>Timeout e sigilo</b><span>Toda execução tem limite de tempo, e tokens não aparecem em logs nem em respostas.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="eyebrow dark">Rodar localmente</div>
+      <h2>Suba em um comando</h2>
+<pre><span class="c"># API + console com dados de demonstração</span>
+<span class="g">git clone</span> https://github.com/lumiguelx/hackathon-isy.one && cd hackathon-isy.one
+<span class="g">docker compose up</span> --build
+<span class="c"># console:  http://localhost:8000/ui</span>
+<span class="c"># API docs: http://localhost:8000/docs  (ou o Swagger desta página)</span>
+
+<span class="c"># Observabilidade (cAdvisor, node-exporter, OTel, Prometheus, Grafana)</span>
+<span class="g">cd</span> deploy/observability && <span class="g">docker compose up</span> -d
+<span class="c"># Grafana: http://localhost:3000</span></pre>
+      <div class="pills" style="margin-top:24px">
+        <span class="pill">Python 3.11</span><span class="pill">FastAPI</span><span class="pill">SQLAlchemy 2.0</span>
+        <span class="pill">PostgreSQL</span><span class="pill">Docker</span><span class="pill">Prometheus</span>
+        <span class="pill">Grafana</span><span class="pill">OpenTelemetry</span><span class="pill">Slack</span><span class="pill">Railway</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="eyebrow dark">Time</div>
+      <h2>Os Divos</h2>
+      <div class="team">
+        <a class="member" href="https://github.com/AnaGabisz"><img src="brand/team/ana.png" alt="" /><div><b>Ana Gabriella</b><span>@AnaGabisz</span></div></a>
+        <a class="member" href="https://github.com/gabibribru"><img src="brand/team/gabriel.png" alt="" /><div><b>Gabriel Reis</b><span>@gabibribru</span></div></a>
+        <a class="member" href="https://github.com/lumiguelx"><img src="brand/team/miguel.png" alt="" /><div><b>Luis Miguel</b><span>@lumiguelx</span></div></a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <img src="brand/c_wordmark.svg" alt="ISYOPS" />
+      <span>Hackathon Isy.One · <a href="swagger/">API</a> · <a href="https://github.com/lumiguelx/hackathon-isy.one">GitHub</a></span>
+    </div>
+  </footer>
+
+  <script>
+    const SHOTS = [
+      ["01-clientes", "Clientes", "Visão da frota: cada cliente com a saúde calculada a partir do histórico de execuções."],
+      ["02-cliente-detalhe", "Detalhe do cliente", "Scripts disponíveis, execução com um clique, agendamento e histórico recente."],
+      ["03-scripts", "Scripts", "Catálogo de scripts com os parâmetros tipados (param_schema) de cada um."],
+      ["04-agendamentos", "Agendamentos", "Execuções recorrentes (cron) por cliente, com a próxima execução visível."],
+      ["05-auditoria", "Auditoria", "Trilha imutável: horário, cliente, script, parâmetros, status, exit code e duração."],
+      ["06-token", "Tokens", "Rotação de tokens (admin e por cliente) e webhook do Slack por cliente."],
+      ["07-registro", "Self-service", "Cadastro público que provisiona o cliente sozinho."],
+      ["08-api-docs", "API Docs", "Referência da API (Scalar) servida pela própria aplicação."],
+    ];
+    const tabs = document.getElementById("tabs");
+    const img = document.getElementById("shot");
+    const cap = document.getElementById("cap");
+    function show(i) {
+      const [file, name, text] = SHOTS[i];
+      img.src = `img/${file}.png`;
+      img.alt = `Tela: ${name}`;
+      cap.textContent = text;
+      [...tabs.children].forEach((b, j) => b.setAttribute("aria-selected", String(i === j)));
+    }
+    SHOTS.forEach(([, name], i) => {
+      const b = document.createElement("button");
+      b.className = "tab"; b.role = "tab"; b.textContent = name;
+      b.onclick = () => show(i);
+      tabs.appendChild(b);
+    });
+    show(0);
+  </script>
+</body>
+</html>

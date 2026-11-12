@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISYOPS · API Swagger</title>
+  <meta name="description" content="Referência interativa da API ISYOPS (Isy.One Shell Automation API)." />
+  <meta name="theme-color" content="#0e113a" />
+  <link rel="icon" type="image/png" href="../brand/favicon-32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.min.css" />
+  <style>
+    :root {
+      --navy-900:#010128; --navy-800:#0a0d2e; --navy-700:#0e113a; --navy-600:#161a52;
+      --gold:#fcb400; --gold-d:#e0a000; --gold-soft:#fff6df;
+      --bg:#f6f5f1; --surface:#fff; --border:#e8e6df; --border-strong:#d9d6cb;
+      --text:#15161c; --text-2:#3a3b44; --muted:#6a6c76;
+      --green:#1f9d57; --blue:#2563eb; --amber:#e8920c; --red:#dc2626;
+      --font:"Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+    /* ---------- Topbar ISYOPS ---------- */
+    .isy-top {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--navy-700); border-bottom: 2px solid var(--gold);
+    }
+    .isy-top .in {
+      max-width: 1320px; margin: 0 auto; padding: 14px 24px;
+      display: flex; align-items: center; gap: 18px;
+    }
+    .isy-top img { height: 30px; display: block; }
+    .isy-top .sep { width: 1px; height: 24px; background: rgba(255,255,255,.18); }
+    .isy-top .ttl { color: #c9cbe0; font-size: 15px; font-weight: 500; }
+    .isy-top nav { margin-left: auto; display: flex; gap: 20px; }
+    .isy-top nav a { color: #c9cbe0; text-decoration: none; font-size: 14px; font-weight: 500; }
+    .isy-top nav a:hover { color: #fff; }
+    .isy-top nav a.cta { color: var(--gold); }
+
+    /* ---------- Hero ---------- */
+    .hero { background: linear-gradient(180deg, var(--navy-700), var(--navy-800)); color: #fff; }
+    .hero .in { max-width: 1320px; margin: 0 auto; padding: 40px 24px 36px; }
+    .hero .eyebrow { color: var(--gold); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; }
+    .hero h1 { margin: 10px 0 8px; font-size: clamp(28px, 4vw, 40px); font-weight: 800; letter-spacing: -.02em; }
+    .hero p { margin: 0; color: #c9cbe0; max-width: 760px; line-height: 1.55; font-size: 16px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 26px; }
+    .step { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 16px 18px; }
+    .swagger-ui .info hgroup.main > a { display: none; } /* link cru ../openapi.json */
+    .step > b { display: block; color: #fff; font-size: 14px; margin-bottom: 6px; }
+    .step span { color: #b3b6cf; font-size: 13.5px; line-height: 1.5; }
+    .step code { font-family: var(--mono); font-size: 12.5px; color: var(--gold); background: rgba(252,180,0,.1); padding: 1px 6px; border-radius: 5px; word-break: break-all; }
+
+    /* ---------- Swagger UI, com a identidade ISYOPS ---------- */
+    #swagger { max-width: 1320px; margin: 0 auto; padding: 8px 8px 60px; }
+    .swagger-ui, .swagger-ui .info .title, .swagger-ui .opblock-tag, .swagger-ui .btn,
+    .swagger-ui .opblock .opblock-summary-description, .swagger-ui table thead tr th,
+    .swagger-ui .parameter__name, .swagger-ui .response-col_status, .swagger-ui label,
+    .swagger-ui .model-title, .swagger-ui section.models h4 { font-family: var(--font); color: var(--text); }
+    .swagger-ui .markdown p, .swagger-ui .markdown li, .swagger-ui .info li, .swagger-ui .info p,
+    .swagger-ui .renderedMarkdown p { font-family: var(--font); font-size: 14.5px; color: var(--text-2); line-height: 1.6; }
+    .swagger-ui code, .swagger-ui pre, .swagger-ui .microlight { font-family: var(--mono) !important; }
+    .swagger-ui .markdown code, .swagger-ui .renderedMarkdown code { color: var(--navy-600); background: #eceae3; font-size: .9em; }
+    .swagger-ui .markdown h2, .swagger-ui .renderedMarkdown h2 { font-family: var(--font); font-weight: 700; color: var(--text); }
+    .swagger-ui .info { margin: 32px 0 20px; }
+    .swagger-ui .info .title { font-weight: 800; letter-spacing: -.02em; }
+    .swagger-ui .info .title small { background: var(--navy-700); }
+    .swagger-ui .info .title small.version-stamp { background: var(--gold); }
+    .swagger-ui .info .title small.version-stamp pre { color: var(--navy-900); }
+    .swagger-ui .info a { color: var(--navy-600); }
+    .swagger-ui .scheme-container {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: 0 1px 2px rgba(10,12,40,.04), 0 10px 26px rgba(10,12,40,.06);
+      margin: 0 0 24px; padding: 18px 20px;
+    }
+    .swagger-ui .servers > label select, .swagger-ui select {
+      border: 1px solid var(--border-strong); border-radius: 8px; font-family: var(--font); box-shadow: none;
+    }
+    .swagger-ui .btn { border-radius: 8px; box-shadow: none; font-weight: 600; }
+    .swagger-ui .btn.authorize { color: var(--navy-700); border-color: var(--navy-700); background: var(--surface); }
+    .swagger-ui .btn.authorize svg { fill: var(--navy-700); }
+    .swagger-ui .btn.execute { background: var(--navy-700); border-color: var(--navy-700); }
+    .swagger-ui .btn.try-out__btn { border-color: var(--navy-700); color: var(--navy-700); }
+    .swagger-ui .opblock-tag { font-size: 20px; font-weight: 700; border-bottom: 1px solid var(--border); }
+    .swagger-ui .opblock-tag small { font-family: var(--font); color: var(--muted); }
+    .swagger-ui .opblock { border-radius: 12px; box-shadow: none; overflow: hidden; }
+    .swagger-ui .opblock .opblock-summary { padding: 8px 12px; }
+    .swagger-ui .opblock .opblock-summary-method { border-radius: 7px; font-family: var(--font); font-weight: 700; min-width: 76px; }
+    .swagger-ui .opblock .opblock-summary-path { font-family: var(--mono); font-size: 14px; }
+    .swagger-ui .opblock.opblock-get    { background: #eef3ff; border-color: #c9d8fb; }
+    .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--blue); }
+    .swagger-ui .opblock.opblock-post   { background: #e8f6ee; border-color: #bfe5cf; }
+    .swagger-ui .opblock.opblock-post .opblock-summary-method { background: var(--green); }
+    .swagger-ui .opblock.opblock-put    { background: var(--gold-soft); border-color: #f5dc9a; }
+    .swagger-ui .opblock.opblock-put .opblock-summary-method { background: var(--gold-d); color: var(--navy-900); }
+    .swagger-ui .opblock.opblock-delete { background: #fcebeb; border-color: #f4c4c4; }
+    .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: var(--red); }
+    .swagger-ui section.models { border-radius: 12px; border-color: var(--border); background: var(--surface); }
+    .swagger-ui .dialog-ux .modal-ux { border-radius: 14px; border: 0; }
+    .swagger-ui .dialog-ux .modal-ux-header { background: var(--navy-700); border-radius: 14px 14px 0 0; }
+    .swagger-ui .dialog-ux .modal-ux-header h3 { color: #fff; font-family: var(--font); }
+    .swagger-ui .dialog-ux .modal-ux-header .close-modal svg { fill: #fff; }
+    .swagger-ui input[type=text], .swagger-ui textarea { border-radius: 8px; border-color: var(--border-strong); font-family: var(--mono); }
+    .swagger-ui .highlight-code > .microlight, .swagger-ui .microlight { background: var(--navy-800) !important; border-radius: 10px; }
+
+    footer { text-align: center; color: var(--muted); font-size: 13px; padding: 0 16px 40px; }
+    footer a { color: var(--navy-600); }
+
+    @media (max-width: 720px) {
+      .isy-top .in { padding: 12px 16px; gap: 12px; }
+      .isy-top .ttl, .isy-top .sep { display: none; }
+      .isy-top nav { gap: 14px; }
+      .hero .in { padding: 28px 16px; }
+      #swagger { padding: 0 0 40px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="isy-top">
+    <div class="in">
+      <a href="../"><img src="../brand/c_wordmark.svg" alt="ISYOPS" /></a>
+      <span class="sep"></span>
+      <span class="ttl">API Reference</span>
+      <nav>
+        <a href="../">Projeto</a>
+        <a href="../openapi.json" download>openapi.json</a>
+        <a class="cta" href="https://github.com/lumiguelx/hackathon-isy.one">GitHub →</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="in">
+      <div class="eyebrow">Isy.One Shell Automation API · v1.0.0</div>
+      <h1>Execute manutenção da frota por API</h1>
+      <p>Referência interativa da API do ISYOPS: gestão de clientes (tenants), catálogo de
+        scripts, execução isolada e auditada, saúde da frota e agendamentos.</p>
+      <div class="steps">
+        <div class="step"><b>1 · Suba a API</b><span><code>docker compose up</code> no repositório. Ela fica em <code>localhost:8000</code>.</span></div>
+        <div class="step"><b>2 · Escolha o servidor</b><span>No seletor <i>Servers</i> abaixo, use <b>Local</b> ou o deploy da <b>Railway</b>.</span></div>
+        <div class="step"><b>3 · Autorize</b><span>Clique em <b>Authorize</b> e informe o <code>X-Isy-Token</code> (admin ou do cliente).</span></div>
+      </div>
+    </div>
+  </section>
+
+  <main id="swagger"></main>
+
+  <footer>Feito no hackathon Isy.One · <a href="../">voltar ao projeto</a></footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-bundle.min.js"></script>
+  <script>
+    window.ui = SwaggerUIBundle({
+      url: "../openapi.json",
+      dom_id: "#swagger",
+      deepLinking: true,
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      docExpansion: "list",
+      defaultModelsExpandDepth: 0,
+      filter: true,
+      tryItOutEnabled: false,
+      syntaxHighlight: { theme: "monokai" },
+    });
+  </script>
+</body>
+</html>
