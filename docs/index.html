@@ -54,7 +54,27 @@
     .btn.ghost:hover { background: rgba(255,255,255,.06); }
     .shot-hero { display: block; width: 100%; height: auto; border-radius: 14px 14px 0 0; box-shadow: 0 -10px 60px rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.12); border-bottom: 0; }
 
+    video.shot-hero { background: #000; }
+    .aws-badge { display: inline-flex; align-items: center; gap: 10px; margin: -28px 0 22px; padding: 9px 16px; border-radius: 999px;
+      background: rgba(255,153,0,.12); border: 1px solid rgba(255,153,0,.45); color: #ffd9a0; font-size: 14.5px; }
+    .aws-badge b { color: #fff; }
+    .aws-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #ff9900; box-shadow: 0 0 0 4px rgba(255,153,0,.2); flex: 0 0 8px; }
+
     section { padding: 80px 0; }
+
+    /* Demo real na AWS */
+    .real { background: var(--surface); border-bottom: 1px solid var(--border); }
+    .real .rf, .real .feat { background: var(--bg); }
+    .real-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 22px; }
+    .rf { flex: 1 1 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+    .rf .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .rf b { display: block; font-size: 17px; margin: 4px 0 2px; }
+    .rf span { color: var(--text-2); font-size: 14px; }
+    .rf.aws { border: 2px solid #ff9900; background: #fff8ec; }
+    .rf.aws .k { color: #b36b00; }
+    .arrow { color: #a87800; font-weight: 700; font-size: 14px; white-space: nowrap; }
+    .arrow::after { content: " →"; }
+    .real-grid { margin-top: 0; }
     h2 { font-size: clamp(26px, 3.4vw, 36px); letter-spacing: -.02em; line-height: 1.15; margin: 10px 0 14px; font-weight: 800; }
     .sec-lead { color: var(--text-2); max-width: 760px; font-size: 17px; margin: 0 0 40px; }
     .eyebrow.dark { color: #a87800; }
@@ -136,6 +156,11 @@
       .wrap { padding: 0 16px; }
       .top nav a.opt { display: none; }
       .hero { padding-top: 48px; }
+      .real-flow { flex-direction: column; align-items: stretch; gap: 8px; }
+      .real-flow .rf { flex: none; }
+      .arrow { align-self: center; padding: 2px 0; }
+      .arrow::after { content: none; }
+      .arrow::before { content: "↓ "; }
       section { padding: 56px 0; }
       .duo, .grid, .flow { grid-template-columns: 1fr; }
       .member { min-width: 0; width: 100%; }
@@ -167,9 +192,36 @@
         <a class="btn gold" href="swagger/">Explorar a API →</a>
         <a class="btn ghost" href="https://github.com/lumiguelx/hackathon-isy.one">Ver código no GitHub</a>
       </div>
-      <img class="shot-hero" src="img/01-clientes.png" alt="Console ISYOPS: lista de clientes com saúde verde, amarela e vermelha" width="2160" height="1350" />
+      <div class="aws-badge">
+        <span class="dot"></span>
+        <span><b>Demo real:</b> provisionamento e manutenção executados por SSH numa <b>AWS EC2 t3.micro</b>, sem simulação</span>
+      </div>
+      <video class="shot-hero" src="video/demo-aws.mp4" poster="video/demo-aws-poster.jpg" width="1920" height="1080"
+        controls muted playsinline preload="metadata" aria-label="Vídeo da demo do ISYOPS operando uma EC2 t3.micro real"></video>
     </div>
   </div>
+
+  <section class="real">
+    <div class="wrap">
+      <div class="eyebrow dark">Provisionamento real na AWS</div>
+      <h2>Nada simulado: uma EC2 t3.micro de verdade</h2>
+      <p class="sec-lead">Na demo, o painel publicado na Railway opera um servidor de cliente real: uma instância
+        <b>AWS EC2 t3.micro</b> (2 vCPU, 1 GiB de RAM) preparada com <code>deploy/client-box/provision.sh</code>.
+        Toda a manutenção chega até ela por SSH.</p>
+      <div class="real-flow">
+        <div class="rf"><div class="k">Painel</div><b>Railway</b><span>FastAPI + PostgreSQL</span></div>
+        <div class="arrow">SSH</div>
+        <div class="rf aws"><div class="k">Servidor do cliente</div><b>AWS EC2 t3.micro</b><span>Docker + usuário dedicado <code>isyone</code></span></div>
+        <div class="arrow">métricas</div>
+        <div class="rf"><div class="k">Observabilidade</div><b>Prometheus + Grafana</b><span>via OTel Collector</span></div>
+      </div>
+      <div class="grid real-grid">
+        <div class="feat"><h3>Containers criados de verdade</h3><p>O <code>provisionar</code> sobe na EC2 os containers <code>db</code> (Postgres), <code>odoo</code> e <code>ifood-agent</code> do novo cliente.</p></div>
+        <div class="feat"><h3>Saída real no console</h3><p>O <code>docker_status</code> devolve o <code>docker ps</code> da instância, com a linha <code>[remoto isyone@&lt;ip&gt;:22]</code>.</p></div>
+        <div class="feat"><h3>Métricas reais no Grafana</h3><p>CPU, memória, disco e uptime do host e de cada container reagem quando o <code>update_agent</code> ou o <code>cleanup_logs</code> rodam.</p></div>
+      </div>
+    </div>
+  </section>
 
   <section>
     <div class="wrap">
@@ -326,6 +378,7 @@
       ["05-auditoria", "Auditoria", "Trilha imutável: horário, cliente, script, parâmetros, status, exit code e duração."],
       ["06-token", "Tokens", "Rotação de tokens (admin e por cliente) e webhook do Slack por cliente."],
       ["07-registro", "Self-service", "Cadastro público que provisiona o cliente sozinho."],
+      ["09-grafana", "Saúde da Frota", "Grafana com métricas reais da EC2 t3.micro: containers no ar, CPU, memória, disco e uptime."],
       ["08-api-docs", "API Docs", "Referência da API (Scalar) servida pela própria aplicação."],
     ];
     const tabs = document.getElementById("tabs");
