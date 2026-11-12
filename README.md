@@ -32,6 +32,17 @@ um **tenant** com credencial própria; cada execução vira **auditoria permanen
 de execuções, sem tabela de status. Tudo dentro de um container Docker, sem ninguém abrir
 um terminal SSH.
 
+## Demo real na AWS
+
+Na demo, o painel (Railway) opera um **servidor de cliente real: uma AWS EC2 t3.micro**,
+preparada com [`deploy/client-box/provision.sh`](deploy/client-box/README.md). O
+provisionamento sobe os containers do cliente de verdade, a manutenção chega por SSH e o
+Grafana mostra as métricas reais da instância.
+[▶ Assistir ao vídeo da demo](https://lumiguelx.github.io/hackathon-isy.one/) ·
+[arquivo mp4](docs/video/demo-aws.mp4)
+
+<img src="docs/img/09-grafana.png" alt="Grafana: saúde da frota Docker na EC2 t3.micro" />
+
 ## Telas
 
 <img src="docs/img/01-clientes.png" alt="Console: clientes e saúde da frota" />
